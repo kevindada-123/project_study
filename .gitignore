@@ -279,3 +279,6 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+project_study.sln
+project_study/project_study.vcxproj
+project_study/project_study.vcxproj.filters
