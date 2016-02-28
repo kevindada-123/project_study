@@ -39,6 +39,11 @@ typedef property_map<graph_t, edge_weight_t>::type edge_weight_map_t;
 typedef property_map<graph_t, edge_capacity_t>::type edge_capacity_map_t;
 typedef property_map<graph_t, edge_residual_capacity_t>::type edge_residual_capacity_map_t;
 
+//宣告 map 物件作為檔案讀入時的安插用 map
+typedef std::map<std::string, vertex_t> name_map_t;
+name_map_t vertex_name_map;
+
+
 //自定義 strcut, 用來表示網路需求
 struct Request
 {
@@ -63,9 +68,7 @@ void construct_graph(std::ifstream &file_in, graph_t &g)
 	typename property_traits<edge_capacity_map_t>::value_type capacity;
 	typename property_traits<edge_residual_capacity_map_t>::value_type residual_capacity;
 
-	//宣告 map 物件作為檔案讀入時的安插用 map
-	typedef std::map<std::string, vertex_t> name_map_t;
-	name_map_t vertex_name_map;
+	
 
 	//用 getline() 一次讀一行
 	for (std::string line; std::getline(file_in, line);)
@@ -148,8 +151,14 @@ int main()
 	//k-shortest test
 	typedef std::list<edge_t> Path;
 	std::list<std::pair<int, Path>> r;
-	vertex_t src = *(vertices(g).first);
-	vertex_t dst = *(vertices(g).first + 10);
+	std::string src_name, dst_name;
+	std::cout << "Please enter the source_vertex and destination_vertex: " << std::endl;
+	std::cin >> src_name;
+	std::cin >> dst_name;
+	auto src_pos = vertex_name_map.find(src_name);
+	auto dst_pos = vertex_name_map.find(dst_name);
+	vertex_t src = src_pos -> second;
+	vertex_t dst = dst_pos -> second;
 	r = yen_ksp(g, src, dst, 3);
 
 
