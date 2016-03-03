@@ -1,4 +1,5 @@
 ﻿#include "yen_ksp.hpp"
+#include "online_path_computation.hpp"
 
 #include <boost/config.hpp>
 #include <boost/graph/adjacency_list.hpp>
@@ -12,7 +13,7 @@
 #include <utility>
 #include <map>
 #include <tuple>
-
+#include <ctime>
 using namespace boost;
 
 
@@ -49,7 +50,7 @@ struct Request
 {
 	std::string src;	//soucre
 	std::string dst;	//destination
-	int cap;			//capacity
+	double cap;			//capacity
 };
 
 //從 filestream 建立 graph, 參數都以參照傳入
@@ -73,7 +74,7 @@ void construct_graph(std::ifstream &file_in, graph_t &g)
 	//用 getline() 一次讀一行
 	for (std::string line; std::getline(file_in, line);)
 	{
-		std::istringstream(line) >> s >> t >> weight >> capacity;
+		std::istringstream(line) >> s >> t >> capacity>> weight;
 		
 		
 		//insert 函式回傳 map 的安插結果, 型別為一個pair 
@@ -116,7 +117,7 @@ void construct_graph(std::ifstream &file_in, graph_t &g)
 		}
 		else
 		{
-			std::cerr << "Detect reapat edge in graph_input.txt file!!" << std::endl << std::endl;
+			std::cerr << "Detect repeat edge in graph_input.txt file!!" << std::endl << std::endl;
 		}
 
 
@@ -124,10 +125,38 @@ void construct_graph(std::ifstream &file_in, graph_t &g)
 
 
 }
-
+void randreq()
+{
+	std::fstream reqfile("request1.txt");
+	if (!reqfile)
+	{
+		std::cerr << "Not request1.txt file!!" << std::endl;
+		//return EXIT_FAILURE;
+	}
+	int i, s, d;
+	double C;
+	std::srand((unsigned)time(NULL)); // 以時間序列當亂數種子
+	for (i = 0; i < 10; ++i)
+	{
+		s = (std::rand() % 18);
+		while (s == 0 || s == 13 || s == 15 || s == 17 || s == 16)
+		{
+			s = (std::rand() % 18);
+		}
+		d = (std::rand() % 18);
+		while (d == 0 || d == 13 || d == 15 || d == 17 || d == 16 || d == s)
+		{
+			d = (std::rand() % 18);
+		}
+		C = (std::rand() % 1885) + 125;
+		C = C*0.1;
+		reqfile << s << " " << d << " " << C << "\n";
+	}
+}
 
 int main()
 {
+    std::cout << "程式開始" << std::endl;
 	std::ifstream file_in("graph_input.txt");
 
 	//如果沒 graph_input.txt, 顯示錯誤訊息並離開程式
@@ -147,19 +176,30 @@ int main()
 
 	//construct the graph
 	construct_graph(file_in, g);
+    
+	//read request from request1.txt
+	Request request;
+	std::ifstream file_request("request1.txt");
+	if (!file_request)
+	{
+		std::cerr << "No request1.txt file!!" << std::endl;
+		return EXIT_FAILURE;
+	}
+	file_request >> request.src >> request.dst >> request.cap;
+	std::cout << "s=" << request.src << " d=" << request.dst << " C=" << request.cap << std::endl;
 
 	//k-shortest test
 	typedef std::list<edge_t> Path;
 	std::list<std::pair<int, Path>> r;
 	std::string src_name, dst_name;
-	std::cout << "Please enter the source_vertex and destination_vertex: " << std::endl;
-	std::cin >> src_name;
-	std::cin >> dst_name;
+	std::cout << "======" << std::endl;
+	src_name = request.src;
+	dst_name = request.dst;
 	auto src_pos = vertex_name_map.find(src_name);
 	auto dst_pos = vertex_name_map.find(dst_name);
 	vertex_t src = src_pos -> second;
 	vertex_t dst = dst_pos -> second;
-	r = yen_ksp(g, src, dst, 3);
+	r = yen_ksp(g, src, dst, 5);
 
 
 	//k-shortest path output
