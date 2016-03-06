@@ -14,6 +14,13 @@
 #include <map>
 #include <tuple>
 #include <ctime>
+#include <vector>
+#include <iterator>
+
+#define G 1
+#define M_MAX 4
+#define B 300
+
 using namespace boost;
 
 
@@ -23,7 +30,7 @@ using namespace boost;
 //struct property;
 typedef property<vertex_name_t, std::string> vertex_properties;
 typedef property < edge_weight_t, int, property<edge_capacity_t, int, 
-	property<edge_residual_capacity_t, int> > > edge_properties;
+	property<edge_index_t, int, property<edge_weight2_t, double> > > > edge_properties;
 
 //graph typedef
 //對於 EdgeList 使用 hash_setS 強制 graph 不會出現平行邊
@@ -38,7 +45,7 @@ typedef graph_traits<graph_t>::edge_descriptor edge_t;
 typedef property_map<graph_t, vertex_name_t>::type vertex_name_map_t;
 typedef property_map<graph_t, edge_weight_t>::type edge_weight_map_t;
 typedef property_map<graph_t, edge_capacity_t>::type edge_capacity_map_t;
-typedef property_map<graph_t, edge_residual_capacity_t>::type edge_residual_capacity_map_t;
+typedef property_map<graph_t, edge_index_t>::type edge_index_map_t;
 
 //宣告 map 物件作為檔案讀入時的安插用 map
 typedef std::map<std::string, vertex_t> name_map_t;
@@ -57,19 +64,19 @@ struct Request
 template<typename graph_t>
 void construct_graph(std::ifstream &file_in, graph_t &g)
 {
-	//property map 宣告, 以 get(property, g) 函式取得 property map 物件
+	//property map 宣告, 以 get(property, graph) 函式取得 property map 物件
 	vertex_name_map_t name_map = get(vertex_name, g);	
 	edge_weight_map_t weight_map = get(edge_weight, g);	
 	edge_capacity_map_t capacity_map = get(edge_capacity, g);
-	edge_residual_capacity_map_t residual_capacity_map = get(edge_residual_capacity, g);
+	edge_index_map_t edge_index_map = get(edge_index, g);
 	
 	//以 property_traits 取得 property 對應的 value type
 	typename property_traits<vertex_name_map_t>::value_type s, t;
 	typename property_traits<edge_weight_map_t>::value_type weight;
 	typename property_traits<edge_capacity_map_t>::value_type capacity;
-	typename property_traits<edge_residual_capacity_map_t>::value_type residual_capacity;
+	typename property_traits<edge_index_map_t>::value_type edge_index;
 
-	
+	edge_index = 0;
 
 	//用 getline() 一次讀一行
 	for (std::string line; std::getline(file_in, line);)
@@ -113,7 +120,7 @@ void construct_graph(std::ifstream &file_in, graph_t &g)
 		{
 			weight_map[e] = weight;
 			capacity_map[e] = capacity;
-			residual_capacity = capacity;
+			edge_index_map[e] = edge_index++;
 		}
 		else
 		{
@@ -166,16 +173,16 @@ int main()
 		return EXIT_FAILURE;
 	}
 
-	graph_t g;
+	graph_t graph;
 
 	//property map
-	vertex_name_map_t name_map = get(vertex_name, g);
-	edge_weight_map_t weight_map = get(edge_weight, g);
-	edge_capacity_map_t capacity_map = get(edge_capacity, g);
-	edge_residual_capacity_map_t residual_capacity_map = get(edge_residual_capacity, g);
+	vertex_name_map_t name_map = get(vertex_name, graph);
+	edge_weight_map_t weight_map = get(edge_weight, graph);
+	edge_capacity_map_t capacity_map = get(edge_capacity, graph);
+
 
 	//construct the graph
-	construct_graph(file_in, g);
+	construct_graph(file_in, graph);
     
 	//read request from request1.txt
 	Request request;
@@ -188,6 +195,17 @@ int main()
 	file_request >> request.src >> request.dst >> request.cap;
 	std::cout << "s=" << request.src << " d=" << request.dst << " C=" << request.cap << std::endl;
 
+	//exterior_properties test
+	//用 2 維 vector 儲存每條 edge 的 bit_mask, 以 exterior_properties 的方式儲存
+	std::vector<std::vector<int>> edge_bit_mask(num_edges(graph), std::vector<int>(B, 0));
+	edge_index_map_t edge_index_map = get(edge_index, graph);
+	using IterType = std::vector<std::vector<int>>::iterator;
+	using ValueType = std::iterator_traits<IterType>::value_type;
+	using ReferenceType = std::iterator_traits<IterType>::reference;
+	using IterMap = iterator_property_map<IterType, edge_index_map_t, ValueType, ReferenceType>;
+	IterType bit_mask_iter = edge_bit_mask.begin();
+	d_prime_convert(graph, weight_map, IterMap(bit_mask_iter, edge_index_map));
+
 	//k-shortest test
 	typedef std::list<edge_t> Path;
 	std::list<std::pair<int, Path>> r;
@@ -199,7 +217,7 @@ int main()
 	auto dst_pos = vertex_name_map.find(dst_name);
 	vertex_t src = src_pos -> second;
 	vertex_t dst = dst_pos -> second;
-	r = yen_ksp(g, src, dst, 5);
+	r = yen_ksp(graph, src, dst, 5);
 
 
 	//k-shortest path output
@@ -211,7 +229,7 @@ int main()
 		std::cout << get(name_map, src) << " ";
 		for (auto v : k_path.second)
 		{
-			std::cout << get(name_map, target(v, g)) << " ";
+			std::cout << get(name_map, target(v, graph)) << " ";
 		}
 		++k;
 		std::cout << std::endl;
