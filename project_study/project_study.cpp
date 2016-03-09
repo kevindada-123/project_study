@@ -55,8 +55,8 @@ name_map_t vertex_name_map;
 //自定義 strcut, 用來表示網路需求
 struct Request
 {
-	std::string src;	//soucre
-	std::string dst;	//destination
+	vertex_t src;		//soucre
+	vertex_t dst;		//destination
 	double cap;			//capacity
 };
 
@@ -192,8 +192,13 @@ int main()
 		std::cerr << "No request1.txt file!!" << std::endl;
 		return EXIT_FAILURE;
 	}
-	file_request >> request.src >> request.dst >> request.cap;
-	std::cout << "s=" << request.src << " d=" << request.dst << " C=" << request.cap << std::endl;
+	std::string src_name, dst_name;
+	file_request >> src_name >> dst_name >> request.cap;
+	auto src_pos = vertex_name_map.find(src_name);
+	auto dst_pos = vertex_name_map.find(dst_name);
+	request.src = src_pos->second;
+	request.dst = dst_pos->second;
+	std::cout << "s=" << src_name << " d=" << dst_name << " C=" << request.cap << std::endl;
 
 	//exterior_properties test
 	//用 2 維 vector 儲存每條 edge 的 bit_mask, 以 exterior_properties 的方式儲存
@@ -206,27 +211,17 @@ int main()
 	IterType bit_mask_iter = edge_bit_mask.begin();
 	d_prime_convert(graph, weight_map, IterMap(bit_mask_iter, edge_index_map));
 
-	//k-shortest test
-	typedef std::list<edge_t> Path;
-	std::list<std::pair<int, Path>> r;
-	std::string src_name, dst_name;
-	std::cout << "======" << std::endl;
-	src_name = request.src;
-	dst_name = request.dst;
-	auto src_pos = vertex_name_map.find(src_name);
-	auto dst_pos = vertex_name_map.find(dst_name);
-	vertex_t src = src_pos -> second;
-	vertex_t dst = dst_pos -> second;
-	r = yen_ksp(graph, src, dst, 5);
+	
 
 
 	//k-shortest path output
 	//以下的 for 迴圈使用 range-for
+	auto r = k_shortest_path(graph, request, get(edge_weight2, graph), 5);
 	int k = 1;
 	for (auto k_path : r)
 	{
 		std::cout << k << " path: " << " weight " << k_path.first << ", ";
-		std::cout << get(name_map, src) << " ";
+		std::cout << get(name_map, request.src) << " ";
 		for (auto v : k_path.second)
 		{
 			std::cout << get(name_map, target(v, graph)) << " ";
