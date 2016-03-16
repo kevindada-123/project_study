@@ -19,29 +19,39 @@
 using namespace boost;
 
 //this function will return maximum size of available slot blocks in b
-int max_block(std::vector<int> &b)
+std::pair<int, int> max_block(std::vector<int>& b)
 {
 	int slot = 0;
 	int max = 0;
 
+	//回傳結果 (position, maxsize)
+	std::pair<int, int> result;
 
-	for (auto i : b)
+	for (int i = 0; i < b.size(); ++i)
 	{
-		if (i == 0)
+		if (b[i] == 0)
 			++slot;
 		else
 		{
 			if (slot > max)
+			{
 				max = slot;
+				result.first = i - max;
+				result.second = max;
+			}
 			slot = 0;
 		}
 	}
 
 	//當 bit mask 為 300 時, 經過上面的判斷式的 max 仍是 0, 在此修正
 	if (slot == B)
+	{
 		max = B;
+		result.first = 0;
+		result.second = max;
+	}
 
-	return max;
+	return result;
 }
 
 template<typename T>
@@ -63,14 +73,15 @@ int mlvl(T distance)
 	return m;
 }
 
-inline int sum_bit_mask(std::vector<int> &b)
+inline int sum_bit_mask(std::vector<int>& b)
 {
-	return std::accumulate(b.begin(), b.end(), 0);
+	auto filter = [](int sum, int element) { if (element != -1) return sum + element; else return sum; };
+	return std::accumulate(b.begin(), b.end(), 0, filter);
 }
 
 //將 d 轉換成 d', 並且寫入 edge 的 weight2 屬性
 template<typename Graph, typename WeightMap, typename BitMaskMap>
-void d_prime_convert(Graph &graph, WeightMap weight_map, BitMaskMap bit_mask_map)
+void d_prime_convert(Graph& graph, WeightMap& weight_map, BitMaskMap& bit_mask_map)
 {
 
 	double d_prime;
@@ -107,7 +118,7 @@ void d_prime_convert(Graph &graph, WeightMap weight_map, BitMaskMap bit_mask_map
 template <typename Graph, typename Request, typename WeightMap>
 std::list < std::pair<typename WeightMap::value_type,
 	std::list<typename Graph::edge_descriptor> > >
-	k_shortest_path(const Graph& graph,const Request& request,WeightMap weight_map, optional<unsigned> K = optional<unsigned>())
+	k_shortest_path(const Graph& graph, Request& request, WeightMap& weight_map, optional<unsigned> K = optional<unsigned>())
 {
 	typename Graph::vertex_descriptor src, dst;
 	src = request.src;
@@ -118,30 +129,168 @@ std::list < std::pair<typename WeightMap::value_type,
 
 
 //一條路徑最多可配置的slot數 Ni 公式(3)
-template<typename T>
-int countNi(T Maxblockai, T Mi)//路徑i的ai mask的Maxblock,路徑i的調變等級M
+template<typename T, typename Request>
+std::pair<bool, int> countNi(T Maxblockai, T Mi, Request& request)//路徑i的ai mask的Maxblock,路徑i的調變等級M
 {
 	int Ni;
-	if (((Maxblockai - 1)*Mi*Cslot) >= C)//最後一條路徑,完成連線
+	bool req_state = false;
+
+	if (((Maxblockai - 1)*Mi*Cslot) >= request.cap)//最後一條路徑,完成連線
 	{
-		if ((int)(C * 10) % (int)(Mi*Cslot * 10) > 0)
+		if ((int)(request.cap * 10) % (int)(Mi*Cslot * 10) > 0)
 		{
-			Ni = (int)(C / (Mi*Cslot)) + 1 + 1;
+			Ni = (int)(request.cap / (Mi*Cslot)) + 1 + 1;
 		}
-		else if ((int)(C * 10) % (int)(Mi*Cslot * 10) == 0)
+		else if ((int)(request.cap * 10) % (int)(Mi*Cslot * 10) == 0)
 		{
-			Ni = (int)(C / (Mi*Cslot)) + 1;
+			Ni = (int)(request.cap / (Mi*Cslot)) + 1;
 		}
-		req_state = 1;//完成連線
+		req_state = true;//完成連線
 	}
-	else if (((Maxblockai - 1)*Mi*Cslot) < C)//未完成連線,還需要路徑
+	else if (((Maxblockai - 1)*Mi*Cslot) < request.cap)//未完成連線,還需要路徑
 	{
-		C = C - ((Maxblockai - 1)*Mi*Cslot);
+		request.cap = request.cap - ((Maxblockai - 1)*Mi*Cslot);
 		Ni = Maxblockai;
-		req_state = 0;//未完成連線
+		req_state = false;//未完成連線
 	}
-	return Ni;//回傳路徑i要配置的slot數
+
+	//回傳連線狀態 & 分配的slot數
+	return std::make_pair(req_state, Ni);
+
+	
 }
+
+
+template<typename Graph, typename Path, typename Request, typename BitMaskMap>
+bool algorithm_detail(Graph& graph, Request& request, Path& k_path, BitMaskMap& bit_mask_map)
+{
+	//表示這個請求是否阻塞
+	bool success;
+
+	//表示是否配置完成
+	bool req_state = false;
+
+	//宣告 BitMask 作為 BitMaskMap 的 value type
+	using BitMask = typename property_traits<BitMaskMap>::value_type;
+	BitMask bit_mask_b;
+
+	//自定義 struct, 儲存某個 request 對某個 edge 分配的 slot, 方便歸還時使用
+	using Edge = typename Graph::edge_descriptor;
+	struct alloc_record
+	{
+		Edge e;
+		int pos;
+		int solts;
+	};
+
+	//建立儲存每個紀錄的 vector
+	std::vector<alloc_record> record_vector;
+
+
+	for (auto path : k_path)
+	{
+		std::vector<int> bit_mask_a(B, 0);
+		
+		//對路徑上的每條邊的be做OR
+		for (auto edge : path.second)
+		{
+			bit_mask_b = get(bit_mask_map, edge);
+
+			for (int i = 0; i < B; ++i)
+			{
+				bit_mask_a[i] = bit_mask_b[i] || bit_mask_a[i];
+			}
+
+		}
+
+		//NOT,得到ai[]
+		for (int i = 0; i < B; ++i)
+		{
+			bit_mask_a[i] = !bit_mask_a[i];
+		}
+
+		//算出ai []的Maxblock
+		std::pair<int, int> max_block_a = max_block(bit_mask_a);
+
+		//算出路徑i的調變等級Mi(要用初始graph的距離)
+		int d_weight_sum = 0;
+		for (auto edge : path)
+		{
+			int weight = get(edge_weight, edge);
+			d_weight_sum += weight;
+		}
+		int mi = mlvl(d_weight_sum);
+
+
+
+
+		if (max_block_a.second >= G)
+		{
+			tie(req_state, ni) = countNi(max_block_a.second, mi, request);
+			
+			//對經過的每條 edge(link) 做 slot 的分配
+			for (auto edge : path.second)
+			{
+				std::vector bit_mask<int> = get(bit_mask_map, edge);
+				int pos = max_block_a.first;
+				for (; pos != (pos + ni) - 1; ++pos)
+				{
+					bit_mask[pos] = 1;
+				}
+				//在尾部加上GB
+				bit_mask[pos] = -1;
+
+				//紀錄分配到哪條 edge(link), solt 的起始位置, solt的數量
+				alloc_record record{ edge, pos, ni };
+				record_vector.push_back(record);
+			}
+			
+		}
+
+		//需求已分配完成, 跳出迴圈
+		if (req_state)
+			break;
+	}
+
+	//在此判斷 req_state, 為 false 時代表使用了所有路徑仍然無法完成配置
+	//歸還已分配的 slot, 並且回報這個請求阻塞
+	if (req_state)
+		success = true;
+	else if (!req_state)
+	{
+		success = false;
+
+		//分配失敗, 進行歸還
+		for (auto rec : record_vector)
+		{
+			BitMask bit_mask = get(bit_mask_map, rec.edge);
+			for (int pos = rec.pos; pos != rec.pos + rec.slots; ++pos)
+			{
+				bit_mask[pos] = 0;
+			}
+		}
+	}
+
+	return success;
+}
+
+
+template<typename Graph, typename Path, typename Request, typename BitMaskMap>
+bool online_path_computation(Graph& graph, Request& request, BitMaskMap& bit_mask_map)
+{
+	//和演算法 2 不同的地方, 除下面這兩個函式呼叫之外應該皆同(未實測)
+	//G(V, E, B, D) → G'(V, E, D')
+	d_prime_convert(graph, get(edge_weight, graph), bit_mask_map);
+	//k-shortest path with D'
+	Path k_path = k_path = k_shortest_path(graph, request, get(edge_weight2, graph), 5);
+	
+	
+	bool result = algorithm_detail(graph, request, k_path, bit_mask_map)
+
+	return result;
+}
+
+
 /*
 for (所有路徑i)
 {
