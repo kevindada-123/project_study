@@ -89,7 +89,7 @@ void d_prime_convert(Graph& graph, WeightMap& weight_map, BitMaskMap& bit_mask_m
 
 	using EdgeIter = typename graph_traits<Graph>::edge_iterator;
 	EdgeIter edge_iter, edge_end;
-	tie(edge_iter, edge_end) = edges(graph);
+	tie(edge_iter, edge_end) = edges(graph);//edges() 得到 graph 對於所有 edge 的 iterator
 
 	typename property_traits<WeightMap>::value_type de;
 	typename property_traits<BitMaskMap>::value_type bit_mask;
@@ -97,10 +97,10 @@ void d_prime_convert(Graph& graph, WeightMap& weight_map, BitMaskMap& bit_mask_m
 	using WeightMap2 = property_map<Graph, edge_weight2_t>::type;
 	WeightMap2 weight_map_2 = get(edge_weight2, graph);
 
-	for (; edge_iter != edge_end; ++edge_iter)
+	for (; edge_iter != edge_end; ++edge_iter)//對第一條~最後一條邊
 	{
-		bit_mask = get(bit_mask_map, *edge_iter);
-		de = get(weight_map, *edge_iter);
+		bit_mask = get(bit_mask_map, *edge_iter); //得到某條邊的bit_mask
+		de = get(weight_map, *edge_iter); //得到某條邊的de 長度(weight_1)
 
 		if (max_block(bit_mask) < G)
 			d_prime = INT_MAX;
@@ -108,7 +108,7 @@ void d_prime_convert(Graph& graph, WeightMap& weight_map, BitMaskMap& bit_mask_m
 		{
 			we = M_MAX - mlvl(de) + 1;
 			//將除數轉為 double, 避免結果變為 0
-			d_prime = we * (sum_bit_mask(bit_mask) + G) / double(B);
+			d_prime = we * (sum_bit_mask(bit_mask) + G) / double(B); //公式
 		}
 
 		weight_map_2[*edge_iter] = d_prime;
@@ -157,7 +157,7 @@ std::pair<bool, int> countNi(T Maxblockai, T Mi, Request& request)//路徑i的ai
 	//回傳連線狀態 & 分配的slot數
 	return std::make_pair(req_state, Ni);
 
-	
+
 }
 
 
@@ -179,26 +179,26 @@ bool algorithm_detail(Graph& graph, Request& request, Path& k_path, BitMaskMap& 
 	struct alloc_record
 	{
 		Edge e;
-		int pos;
-		int solts;
+		int pos; //開始位置
+		int solts; //數量
 	};
 
 	//建立儲存每個紀錄的 vector
 	std::vector<alloc_record> record_vector;
 
 
-	for (auto path : k_path)
+	for (auto path : k_path)//5條路徑
 	{
-		std::vector<int> bit_mask_a(B, 0);
-		
+		std::vector<int> bit_mask_a(B, 0); //大小=300的陣列(ai),內容預設為0
+
 		//對路徑上的每條邊的be做OR
 		for (auto edge : path.second)
 		{
-			bit_mask_b = get(bit_mask_map, edge);
+			bit_mask_b = get(bit_mask_map, edge); //取得邊的bit mask map
 
 			for (int i = 0; i < B; ++i)
 			{
-				bit_mask_a[i] = bit_mask_b[i] || bit_mask_a[i];
+				bit_mask_a[i] = bit_mask_b[i] || bit_mask_a[i]; //做OR
 			}
 
 		}
@@ -210,11 +210,11 @@ bool algorithm_detail(Graph& graph, Request& request, Path& k_path, BitMaskMap& 
 		}
 
 		//算出ai []的Maxblock
-		std::pair<int, int> max_block_a = max_block(bit_mask_a);
+		std::pair<int, int> max_block_a = max_block(bit_mask_a); //得到aimax的 起始位置,大小
 
 		//算出路徑i的調變等級Mi(要用初始graph的距離)
 		int d_weight_sum = 0;
-		for (auto edge : path)
+		for (auto edge : path)//路徑的每條邊
 		{
 			int weight = get(edge_weight, edge);
 			d_weight_sum += weight;
@@ -224,16 +224,16 @@ bool algorithm_detail(Graph& graph, Request& request, Path& k_path, BitMaskMap& 
 
 
 
-		if (max_block_a.second >= G)
+		if (max_block_a.second >= G) //這條路徑可以用
 		{
-			tie(req_state, ni) = countNi(max_block_a.second, mi, request);
-			
+			tie(req_state, ni) = countNi(max_block_a.second, mi, request); //大小,調變,要求
+
 			//對經過的每條 edge(link) 做 slot 的分配
 			for (auto edge : path.second)
 			{
 				std::vector bit_mask<int> = get(bit_mask_map, edge);
 				int pos = max_block_a.first;
-				for (; pos != (pos + ni) - 1; ++pos)
+				for (; pos != (pos + ni) - 1; ++pos)//分配到的slot設為1
 				{
 					bit_mask[pos] = 1;
 				}
@@ -244,7 +244,7 @@ bool algorithm_detail(Graph& graph, Request& request, Path& k_path, BitMaskMap& 
 				alloc_record record{ edge, pos, ni };
 				record_vector.push_back(record);
 			}
-			
+
 		}
 
 		//需求已分配完成, 跳出迴圈
@@ -261,7 +261,7 @@ bool algorithm_detail(Graph& graph, Request& request, Path& k_path, BitMaskMap& 
 		success = false;
 
 		//分配失敗, 進行歸還
-		for (auto rec : record_vector)
+		for (auto rec : record_vector)//對整個record_vector
 		{
 			BitMask bit_mask = get(bit_mask_map, rec.edge);
 			for (int pos = rec.pos; pos != rec.pos + rec.slots; ++pos)
@@ -278,38 +278,38 @@ bool algorithm_detail(Graph& graph, Request& request, Path& k_path, BitMaskMap& 
 template<typename Graph, typename Path, typename Request, typename BitMaskMap>
 bool online_path_computation(Graph& graph, Request& request, BitMaskMap& bit_mask_map)
 {
-	//和演算法 2 不同的地方, 除下面這兩個函式呼叫之外應該皆同(未實測)
+	//和演算法 2 不同的地方, 除下面這兩個函式呼叫之外 algorithm_detail 應該皆同(未實測)
 	//G(V, E, B, D) → G'(V, E, D')
 	d_prime_convert(graph, get(edge_weight, graph), bit_mask_map);
 	//k-shortest path with D'
-	Path k_path = k_path = k_shortest_path(graph, request, get(edge_weight2, graph), 5);
-	
-	
+	Path k_path = k_shortest_path(graph, request, get(edge_weight2, graph), 5);
+
+
 	bool result = algorithm_detail(graph, request, k_path, bit_mask_map)
 
-	return result;
+		return result;
 }
 
 
 /*
 for (所有路徑i)
 {
-	對路徑上的每條邊的bit_mask做or
-	再做NOT,得到ai mask[]
-	算出ai mask[]的Maxblock_ai
-	算出路徑i的調變等級Mi(要用初始graph的距離)
-	if(Maxblock_ai >= g)
-	{
-		路徑i要配置的slot數 = countNi(Maxblock_ai, Mi);
-		將graph中路徑i經過的邊都配置slot;
-		if (reqstate == 1)//表示要求的頻寬配置完成
-		{
+對路徑上的每條邊的bit_mask做or
+再做NOT,得到ai mask[]
+算出ai mask[]的Maxblock_ai
+算出路徑i的調變等級Mi(要用初始graph的距離)
+if(Maxblock_ai >= g)
+{
+路徑i要配置的slot數 = countNi(Maxblock_ai, Mi);
+將graph中路徑i經過的邊都配置slot;
+if (reqstate == 1)//表示要求的頻寬配置完成
+{
 
-		}
-	}
+}
+}
 }
 if (reqstate == 0)
 {
-		歸還graph中這個請求所配置的slot;->還不知道怎麼歸還...
-		回傳這個請求阻塞
+歸還graph中這個請求所配置的slot;->還不知道怎麼歸還...
+回傳這個請求阻塞
 }*/

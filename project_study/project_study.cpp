@@ -24,30 +24,37 @@
 using namespace boost;
 
 
-//vertex & edge properties
+//vertex & edge properties 別名
 //巢狀 property typedef 下面為 property 模板的原型, 第三個參數預設為 no_property
-//template <class PropertyTag, class T, class NextProperty = no_property>
-//struct property;
+//property<class PropertyTag, class T, class NextProperty = no_property>
 using VertexProperties = property<vertex_name_t, std::string>;
 using EdgeProperties = property < edge_weight_t, int, property<edge_capacity_t, int,
 	property<edge_index_t, int, property<edge_weight2_t, double> > > >;
 
-//graph typedef
+//graph 別名
 //對於 EdgeList 使用 hash_setS 強制 graph 不會出現平行邊
+//vecS
+//undirectedS  
+//VertexProperties 頂點的屬性(頂點名稱,型別string)
+//EdgeProperties 邊的屬性(權重,型別int)(容量,型別int)(邊號碼,型別int)(權重2,型別int)
 using Graph = adjacency_list< hash_setS, vecS, undirectedS, VertexProperties, EdgeProperties >;
 
-//vertex & edge descriptor
-using Vertex = graph_traits<Graph>::vertex_descriptor;
-using Edge   = graph_traits<Graph>::edge_descriptor ;
+//vertex & edge descriptor 別名
+//可以把 descriptor 當成獨特的 ID, 每個 vertex 或 edge 都有屬於自己的 descriptor(ID)
+using Vertex = graph_traits<Graph>::vertex_descriptor;  //以 Vertex 做為 vertex_descriptor 的別名
+using Edge = graph_traits<Graph>::edge_descriptor;		//以 Edge 做為 edge_descriptor 的別名
 
-//property map typedef
+//property map type 別名
+//用來表示 property map 物件的型別
 using VertexNameMap = property_map<Graph, vertex_name_t>::type;
 using EdgeWeightMap = property_map<Graph, edge_weight_t>::type;
 using EdgeCapacityMap = property_map<Graph, edge_capacity_t>::type;
 using EdgeIndexMap = property_map<Graph, edge_index_t>::type;
 
-
-//宣告 map 物件作為檔案讀入時的安插用 map, 為全域變數
+//std::map 別名
+//宣告 map 物件作為檔案讀入時的安插用 map (並非 BGL 的 property map), 為全域變數
+//property map 為(Vertex, name), 對於 name 當 key 的尋找不方便
+//故另行使用(name, Vertex)的 map 方便以 name 當 key 的尋找
 using MapOfName = std::map<std::string, Vertex>;
 MapOfName vertex_name_map;
 
@@ -57,20 +64,24 @@ struct Request
 {
 	Vertex src;		//soucre
 	Vertex dst;		//destination
-	double cap;			//capacity
+	double cap;		//capacity
 };
 
 //從 filestream 建立 graph, 參數都以參照傳入
 template<typename Graph>
 void construct_graph(std::ifstream& file_in, Graph& g)
 {
-	//property map 宣告, 以 get(property, graph) 函式取得 property map 物件
-	VertexNameMap name_map = get(vertex_name, g);	
-	EdgeWeightMap weight_map = get(edge_weight, g);	
+	//property map 宣告, 以 get(property_tag, graph) 函式取得 property map 物件
+	VertexNameMap name_map = get(vertex_name, g);
+	EdgeWeightMap weight_map = get(edge_weight, g);
 	EdgeCapacityMap capacity_map = get(edge_capacity, g);
 	EdgeIndexMap edge_index_map = get(edge_index, g);
-	
-	//以 property_traits 取得 property 對應的 value type
+
+	//以 property_traits 取得 property map 裡存放 value 所對應的 type
+	//(key, →value←)
+	//其實就是property<class PropertyTag, class T> 裡的class T
+	//這邊並沒有另行使用別名, 直接宣告變數
+	//typename 代表後面 →property_traits<>::value_type← 為 type
 	typename property_traits<VertexNameMap>::value_type s, t;
 	typename property_traits<EdgeWeightMap>::value_type weight;
 	typename property_traits<EdgeCapacityMap>::value_type capacity;
@@ -81,23 +92,23 @@ void construct_graph(std::ifstream& file_in, Graph& g)
 	//用 getline() 一次讀一行
 	for (std::string line; std::getline(file_in, line);)
 	{
-		std::istringstream(line) >> s >> t >> capacity>> weight;
-		
-		
+		std::istringstream(line) >> s >> t >> capacity >> weight;
+
+
 		//insert 函式回傳 map 的安插結果, 型別為一個pair 
 		//first 元素為新安插的位置 or 先前已安插過的位置
 		//second 元素為是否有安插成功
 		//安插成功的話則進行 add_vertex(), name_map 的安插
 		//否則將 vertex descriptor 設定為已經在 map 裡的 vertex
-		MapOfName::iterator pos;
+		MapOfName::iterator pos;//map 物件的 iterator, 對其提領得到一組 map, (name, vertex_descriptor)
 		bool inserted;
-		Vertex u, v;
+		Vertex u, v;//u,v=vertex_descriptor
 		tie(pos, inserted) = vertex_name_map.insert(std::make_pair(s, Vertex()));
-		if (inserted)
+		if (inserted)//安插成功
 		{
-			u = add_vertex(g);
-			name_map[u] = s;
-			pos->second = u;
+			u = add_vertex(g);//add_vertex()回傳新增到 graph 裡的 vertex 的 vertex_descriptor
+			name_map[u] = s;//(property map) name_map[vertex_descriptor]=s, s 為頂點名稱
+			pos->second = u;//(非 property map) vertex_name_map[name] = u, u 為 vertex_descriptor 
 		}
 		else
 			u = pos->second;
@@ -115,7 +126,7 @@ void construct_graph(std::ifstream& file_in, Graph& g)
 		//add edge
 		//若對 edge 安插失敗則代表 graph_input.txt 中有重複的 edge, 顯示錯誤訊息
 		Edge e;
-		tie(e, inserted) = add_edge(u, v, g);
+		tie(e, inserted) = add_edge(u, v, g); //add_edge 回傳 (edge_descriptor, inserted)
 		if (inserted)
 		{
 			weight_map[e] = weight;
@@ -163,7 +174,7 @@ void randreq()
 
 int main()
 {
-    std::cout << "程式開始" << std::endl;
+	std::cout << "程式開始" << std::endl;
 	std::ifstream file_in("graph_input.txt");
 
 	//如果沒 graph_input.txt, 顯示錯誤訊息並離開程式
@@ -176,16 +187,17 @@ int main()
 	Graph graph;
 
 	//property map
+	//以 get(property_tag, graph) 函式取得 property map 物件
 	VertexNameMap name_map = get(vertex_name, graph);
 	EdgeWeightMap weight_map = get(edge_weight, graph);
 	EdgeCapacityMap capacity_map = get(edge_capacity, graph);
 
 
-	//construct the graph
+	//construct the graph把圖建立
 	construct_graph(file_in, graph);
-    
+
 	//read request from request1.txt
-	Request request;
+	Request request;//(src,dst,cap)
 	std::ifstream file_request("request1.txt");
 	if (!file_request)
 	{
@@ -194,11 +206,14 @@ int main()
 	}
 	std::string src_name, dst_name;
 	file_request >> src_name >> dst_name >> request.cap;
+	//find(key) 回傳所尋找到的第一組 (key, vaule) 的位置 (也是iterator)
+	//在此使用 find 而不使用更簡單的 map[key], 確保如果所搜尋的 key 若不在 map 中會使程式報錯
 	auto src_pos = vertex_name_map.find(src_name);
 	auto dst_pos = vertex_name_map.find(dst_name);
 	request.src = src_pos->second;
 	request.dst = dst_pos->second;
 	std::cout << "s=" << src_name << " d=" << dst_name << " C=" << request.cap << std::endl;
+
 
 	/*
 	//exterior_properties test
@@ -212,7 +227,7 @@ int main()
 	IterType bit_mask_iter = edge_bit_mask.begin();
 	d_prime_convert(graph, weight_map, IterMap(bit_mask_iter, edge_index_map));
 	*/
-	
+
 
 	/*
 	//k-shortest path output
@@ -221,14 +236,14 @@ int main()
 	int k = 1;
 	for (auto k_path : r)
 	{
-		std::cout << k << " path: " << " weight " << k_path.first << ", ";
-		std::cout << get(name_map, request.src) << " ";
-		for (auto v : k_path.second)
-		{
-			std::cout << get(name_map, target(v, graph)) << " ";
-		}
-		++k;
-		std::cout << std::endl;
+	std::cout << k << " path: " << " weight " << k_path.first << ", ";
+	std::cout << get(name_map, request.src) << " ";
+	for (auto v : k_path.second)
+	{
+	std::cout << get(name_map, target(v, graph)) << " ";
+	}
+	++k;
+	std::cout << std::endl;
 	}
 	*/
 
