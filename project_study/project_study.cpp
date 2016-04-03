@@ -1,7 +1,4 @@
-﻿#include "yen_ksp.hpp"
-#include "online_path_computation.hpp"
-
-#include <boost/config.hpp>
+﻿#include <boost/config.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/utility.hpp>
 #include <boost/property_map/property_map.hpp>
@@ -16,6 +13,11 @@
 #include <ctime>
 #include <vector>
 #include <iterator>
+
+#include "yen_ksp.hpp"
+#include "online_path_computation.hpp"
+#include "debug.hpp"
+
 
 #define G 1
 #define M_MAX 4
@@ -41,8 +43,8 @@ using Graph = adjacency_list< hash_setS, vecS, undirectedS, VertexProperties, Ed
 
 //vertex & edge descriptor 別名
 //可以把 descriptor 當成獨特的 ID, 每個 vertex 或 edge 都有屬於自己的 descriptor(ID)
-using Vertex = graph_traits<Graph>::vertex_descriptor;  //以 Vertex 做為 vertex_descriptor 的別名
-using Edge = graph_traits<Graph>::edge_descriptor;		//以 Edge 做為 edge_descriptor 的別名
+using Vertex = graph_traits<Graph>::vertex_descriptor;		//以 Vertex 做為 vertex_descriptor 的別名
+using Edge = graph_traits<Graph>::edge_descriptor;			//以 Edge 做為 edge_descriptor 的別名
 
 //property map type 別名
 //用來表示 property map 物件的型別
@@ -177,6 +179,7 @@ int main()
 	std::cout << "程式開始" << std::endl;
 	std::ifstream file_in("graph_input.txt");
 
+	int req_num = 0;
 	//如果沒 graph_input.txt, 顯示錯誤訊息並離開程式
 	if (!file_in)
 	{
@@ -204,49 +207,47 @@ int main()
 		std::cerr << "No request1.txt file!!" << std::endl;
 		return EXIT_FAILURE;
 	}
-	std::string src_name, dst_name;
-	file_request >> src_name >> dst_name >> request.cap;
-	//find(key) 回傳所尋找到的第一組 (key, vaule) 的位置 (也是iterator)
-	//在此使用 find 而不使用更簡單的 map[key], 確保如果所搜尋的 key 若不在 map 中會使程式報錯
-	auto src_pos = vertex_name_map.find(src_name);
-	auto dst_pos = vertex_name_map.find(dst_name);
-	request.src = src_pos->second;
-	request.dst = dst_pos->second;
-	std::cout << "s=" << src_name << " d=" << dst_name << " C=" << request.cap << std::endl;
 
-
-	/*
 	//exterior_properties test
 	//用 2 維 vector 儲存每條 edge 的 bit_mask, 以 exterior_properties 的方式儲存
 	std::vector<std::vector<int>> edge_bit_mask(num_edges(graph), std::vector<int>(B, 0));
 	EdgeIndexMap edge_index_map = get(edge_index, graph);
 	using IterType = std::vector<std::vector<int>>::iterator;
-	using ValueType = std::iterator_traits<IterType>::value_type;
-	using ReferenceType = std::iterator_traits<IterType>::reference;
-	using IterMap = iterator_property_map<IterType, EdgeIndexMap, ValueType, ReferenceType>;
+	using IterMap = iterator_property_map<IterType, EdgeIndexMap>;
 	IterType bit_mask_iter = edge_bit_mask.begin();
-	d_prime_convert(graph, weight_map, IterMap(bit_mask_iter, edge_index_map));
-	*/
 
 
-	/*
-	//k-shortest path output
-	//以下的 for 迴圈使用 range-for
-	auto r = k_shortest_path(graph, request, get(edge_weight2, graph), 5);
-	int k = 1;
-	for (auto k_path : r)
+	////debug.hpp test
+	//Request rt{ 1, 11, 300 };
+	//k_path_print(graph, rt, get(edge_weight, graph), 5);
+
+
+	for (std::string line; std::getline(file_request, line);)
 	{
-	std::cout << k << " path: " << " weight " << k_path.first << ", ";
-	std::cout << get(name_map, request.src) << " ";
-	for (auto v : k_path.second)
-	{
-	std::cout << get(name_map, target(v, graph)) << " ";
-	}
-	++k;
-	std::cout << std::endl;
-	}
-	*/
+		req_num++;
+		std::cout << "請求" << req_num << ": ";
+		std::string src_name, dst_name;
+		std::istringstream(line) >> src_name >> dst_name >> request.cap;
 
+		//find(key) 回傳所尋找到的第一組 (key, vaule) 的位置 (也是iterator)
+		//在此使用 find 而不使用更簡單的 map[key], 確保如果所搜尋的 key 若不在 map 中會使程式報錯
+		auto src_pos = vertex_name_map.find(src_name);
+		auto dst_pos = vertex_name_map.find(dst_name);
+		request.src = src_pos->second;
+		request.dst = dst_pos->second;
+		std::cout << "s=" << src_name << " d=" << dst_name << " C=" << request.cap << std::endl << std::endl;
+
+
+		bool success = online_path_computation(graph, request, IterMap(bit_mask_iter, edge_index_map));
+		std::cout << "請求" << req_num << "結果 : ";
+		if (success)
+			std::cout << "success!" << std::endl;
+		else
+			std::cout << "block!" << std::endl;
+		std::cout << "===========================================" << std::endl;
+	}
+	
+	system("pause");
 	return 0;
 }
 
