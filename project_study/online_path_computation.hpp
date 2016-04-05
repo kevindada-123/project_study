@@ -203,13 +203,15 @@ namespace boost
 			int pos; //開始位置
 			int slots; //數量
 		};
+		
 		///////////測試用////////////
 		int numb = 0;
 		double req_cap = request.cap;
+		int k = 1, kp = 1;
 		////////////end////////////
+		
 		//建立儲存每個紀錄的 vector
 		std::vector<alloc_record> record_vector;
-		int k = 1, kp = 1;
 		for (auto path : k_path)//5條路徑
 		{
 			std::vector<int> bit_mask_a(B, 0); //大小=300的陣列(ai),內容預設為0
@@ -274,7 +276,8 @@ namespace boost
 			//////////////////////////end///////////////////////////////////
 			if (max_block_a.second >= G) //這條路徑可以用
 			{
-				std::cout << "可用路徑:" << k;
+				/////////////////////////測試用///////////////////////////////////
+				std::cout << "可用路徑 " << k << ": ";
 				std::cout << get(name_map, request.src) << " ";
 				for (auto v : path.second)
 				{
@@ -282,6 +285,7 @@ namespace boost
 				}
 				++k;
 				std::cout << std::endl;
+				//////////////////////////end///////////////////////////////////
 
 				int ni;
 				tie(req_state, ni) = countNi(max_block_a.second, mi, request); //大小,調變,要求

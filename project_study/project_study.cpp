@@ -217,9 +217,6 @@ int main()
 	IterType bit_mask_iter = edge_bit_mask.begin();
 
 
-	////debug.hpp test
-	//Request rt{ 1, 11, 300 };
-	//k_path_print(graph, rt, get(edge_weight, graph), 5);
 
 
 	for (std::string line; std::getline(file_request, line);)
@@ -245,9 +242,14 @@ int main()
 		else
 			std::cout << "block!" << std::endl;
 		std::cout << "===========================================" << std::endl;
+
+
+		//debug//測試//////////
+		bit_mask_print(graph, edge_bit_mask, IterMap(bit_mask_iter, edge_index_map));
+
 	}
 	
-	system("pause");
+	
 	return 0;
 }
 
