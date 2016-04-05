@@ -11,7 +11,7 @@ Input  Graph
 <br>
 從 graph_input.txt 輸入圖  
 格式: 
->vertex_name　vertex_name　edge_capacity edge_weight
+>vertex_name　vertex_name　edge_capacity　edge_weight
 
 <br>
 k-shortest path 使用 https://svn.boost.org/trac/boost/ticket/11838 的實作  
