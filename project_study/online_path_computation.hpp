@@ -94,7 +94,7 @@ namespace boost
 
 	inline int sum_bit_mask(std::vector<int> &b)
 	{
-		auto filter = [](int sum, int element) { if (element != -1) return sum + element; else return sum; };
+		auto filter = [](int sum, int element) { if (element != 7) return sum + element; else return sum; };
 		return std::accumulate(b.begin(), b.end(), 0, filter);
 	}
 
@@ -179,6 +179,46 @@ namespace boost
 
 	}
 
+	template<typename Map, typename Request, typename Path>
+	void path_recorder(Map& map,const Request& request,const Path& path)
+	{
+		typename Map::iterator pos;
+		using SetInMap = typename Map::mapped_type;
+		SetInMap set{ path };
+		bool inserted;
+		auto p = std::make_pair(request.src, request.dst);
+
+		tie(pos, inserted) = map.insert(std::make_pair(p, set) );
+
+		//當 inserted 結果為 false, 代表 map 中已經有相同 src 和 dst 的路徑
+		//在此將 path (型別是 list) 放入 set
+		if (!inserted)
+		{
+			auto& path_set = pos->second;
+			//
+			typename std::set < std::list<Graph::edge_descriptor>>::iterator test1;
+			bool test2;
+			tie(test1, test2) = path_set.insert(path);
+
+			//
+			//path_set.insert(path);
+		}
+		
+	}
+
+	template<typename Map, typename Request, typename KPath>
+	void path_recorder_remove(Map& map, const Request& request, const KPath& k_path)
+	{
+		auto p = std::make_pair(request.src, request.dst);
+
+		auto result = map.find(p);
+		auto path_set = result->second;
+
+		for (auto path : k_path)
+			path_set.erase(path.second);
+
+
+	}
 
 	template<typename Graph, typename Path, typename Request, typename BitMaskMap>
 	bool algorithm_detail(Graph& graph, Request& request, Path& k_path, BitMaskMap& bit_mask_map)
@@ -212,12 +252,12 @@ namespace boost
 		
 		//建立儲存每個紀錄的 vector
 		std::vector<alloc_record> record_vector;
-		for (auto path : k_path)//5條路徑
+		for (auto weight_and_path : k_path)//5條路徑
 		{
 			std::vector<int> bit_mask_a(B, 0); //大小=300的陣列(ai),內容預設為0
 
 											   //對路徑上的每條邊的be做OR
-			for (auto edge : path.second)
+			for (auto edge : weight_and_path.second)
 			{
 				bit_mask_b = get(bit_mask_map, edge); //取得邊的bit mask map
 
@@ -247,7 +287,7 @@ namespace boost
 
 																	 //算出路徑i的調變等級Mi(要用初始graph的距離)
 			int d_weight_sum = 0;
-			for (auto edge : path.second)//路徑的每條邊
+			for (auto edge : weight_and_path.second)//路徑的每條邊
 			{
 				int weight = get(edge_weight, graph, edge);
 				d_weight_sum += weight;
@@ -267,7 +307,7 @@ namespace boost
 			/////////////////////////測試用///////////////////////////////////
 			std::cout << "k_path " << kp << " : ";
 			std::cout << get(name_map, request.src) << " ";
-			for (auto v : path.second)
+			for (auto v : weight_and_path.second)
 			{
 				std::cout << get(name_map, target(v, graph)) << " ";
 			}
@@ -279,7 +319,7 @@ namespace boost
 				/////////////////////////測試用///////////////////////////////////
 				std::cout << "可用路徑 " << k << ": ";
 				std::cout << get(name_map, request.src) << " ";
-				for (auto v : path.second)
+				for (auto v : weight_and_path.second)
 				{
 					std::cout << get(name_map, target(v, graph)) << " ";
 				}
@@ -290,7 +330,7 @@ namespace boost
 				int ni;
 				tie(req_state, ni) = countNi(max_block_a.second, mi, request); //大小,調變,要求
 																			   //對經過的每條 edge(link) 做 slot 的分配
-				for (auto edge : path.second)
+				for (auto edge : weight_and_path.second)
 				{
 					std::vector<int>& bit_mask = get(bit_mask_map, edge);
 					int pos = max_block_a.first;
@@ -300,7 +340,7 @@ namespace boost
 						bit_mask[pos] = 1;
 					}
 					//在尾部加上GB
-					bit_mask[pos] = -1;
+					bit_mask[pos] = 7;
 
 					//紀錄分配到哪條 edge(link), solt 的起始位置, solt的數量
 					alloc_record record{ edge, block_start , ni };
@@ -309,6 +349,11 @@ namespace boost
 				std::cout << "起始點:" << max_block_a.first << " slot數量:" << ni << std::endl << std::endl;
 
 			}
+
+			//將有分配slot的路徑記錄到 map 裡
+			path_recorder(g_usingPaths, request, weight_and_path.second);
+			
+
 
 			//需求已分配完成, 跳出迴圈
 			if (req_state)
@@ -336,6 +381,12 @@ namespace boost
 					bit_mask[pos] = 0;
 				}
 			}
+
+
+			/*此段程式有點疑問 暫時註解掉
+			//分配失敗, 刪除記錄在 g_usingPaths 中的 path (k條)
+			path_recorder_remove(g_usingPaths, request, k_path);
+			*/
 		}
 
 		return success;

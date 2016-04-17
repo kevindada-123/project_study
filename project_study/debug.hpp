@@ -32,6 +32,7 @@ namespace boost
 
 	}
 
+	//print bitmask to file
 	template<typename Graph, typename BitMaskMap>
 	void bit_mask_print(Graph graph, const std::vector<std::vector<int>>& bit_mask, BitMaskMap& bit_mask_map)
 	{
@@ -75,6 +76,48 @@ namespace boost
 	}
 
 
+	//print g_UsingPaths to file
+	template <typename Graph, typename UsingPaths>
+	void print_usingPaths(Graph graph, UsingPaths usingPaths)
+	{
+		std::ofstream file_out("UsingPaths.txt", std::ios_base::trunc);
+
+		for (auto v_and_path : usingPaths)
+		{
+			auto vertexNameMap = get(vertex_name, graph);
+			
+			//印出 (Vertex, Vertex)
+			auto vertex_pair = v_and_path.first;
+			Vertex src = vertex_pair.first;
+			Vertex dst = vertex_pair.second;
+			std::string src_name = vertexNameMap[src];
+			std::string dst_name = vertexNameMap[dst];
+
+			file_out << "(" << src_name << "," << dst_name << ")" << std::endl;
+
+
+			//印出 path_set 裡的每條 path
+			auto path_set = v_and_path.second;
+			for (auto path : path_set)
+			{
+				//印出起點
+				file_out << src_name << " ";
+
+				for (auto edge : path)
+				{
+					Vertex tar = target(edge, graph);
+					file_out << vertexNameMap[tar] << " ";
+				}
+
+				file_out << std::endl;
+			}
+
+			//印完一組 map 後加上分隔線
+			file_out << "------------------------------" << std::endl;
+
+		}
+
+	}
 
 
 

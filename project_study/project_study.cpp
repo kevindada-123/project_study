@@ -58,7 +58,12 @@ using EdgeIndexMap = property_map<Graph, edge_index_t>::type;
 //property map 為(Vertex, name), 對於 name 當 key 的尋找不方便
 //故另行使用(name, Vertex)的 map 方便以 name 當 key 的尋找
 using MapOfName = std::map<std::string, Vertex>;
-MapOfName vertex_name_map;
+MapOfName g_vertexNameMap;
+
+
+//使用 map 來記錄對於同個 src & dst 的 Request 的路徑
+std::map<std::pair<Vertex, Vertex>, std::set<std::list<Graph::edge_descriptor> > > g_usingPaths;
+
 
 
 //自定義 strcut, 用來表示網路需求
@@ -105,17 +110,17 @@ void construct_graph(std::ifstream& file_in, Graph& g)
 		MapOfName::iterator pos;//map 物件的 iterator, 對其提領得到一組 map, (name, vertex_descriptor)
 		bool inserted;
 		Vertex u, v;//u,v=vertex_descriptor
-		tie(pos, inserted) = vertex_name_map.insert(std::make_pair(s, Vertex()));
+		tie(pos, inserted) = g_vertexNameMap.insert(std::make_pair(s, Vertex()));
 		if (inserted)//安插成功
 		{
 			u = add_vertex(g);//add_vertex()回傳新增到 graph 裡的 vertex 的 vertex_descriptor
 			name_map[u] = s;//(property map) name_map[vertex_descriptor]=s, s 為頂點名稱
-			pos->second = u;//(非 property map) vertex_name_map[name] = u, u 為 vertex_descriptor 
+			pos->second = u;//(非 property map) g_vertexNameMap[name] = u, u 為 vertex_descriptor 
 		}
 		else
 			u = pos->second;
 
-		tie(pos, inserted) = vertex_name_map.insert(std::make_pair(t, Vertex()));
+		tie(pos, inserted) = g_vertexNameMap.insert(std::make_pair(t, Vertex()));
 		if (inserted)
 		{
 			v = add_vertex(g);
@@ -228,8 +233,8 @@ int main()
 
 		//find(key) 回傳所尋找到的第一組 (key, vaule) 的位置 (也是iterator)
 		//在此使用 find 而不使用更簡單的 map[key], 確保如果所搜尋的 key 若不在 map 中會使程式報錯
-		auto src_pos = vertex_name_map.find(src_name);
-		auto dst_pos = vertex_name_map.find(dst_name);
+		auto src_pos = g_vertexNameMap.find(src_name);
+		auto dst_pos = g_vertexNameMap.find(dst_name);
 		request.src = src_pos->second;
 		request.dst = dst_pos->second;
 		std::cout << "s=" << src_name << " d=" << dst_name << " C=" << request.cap << std::endl << std::endl;
@@ -244,12 +249,19 @@ int main()
 		std::cout << "===========================================" << std::endl;
 
 
-		//debug//測試//////////
-		bit_mask_print(graph, edge_bit_mask, IterMap(bit_mask_iter, edge_index_map));
+		////debug//測試//////////
+		//bit_mask_print(graph, edge_bit_mask, IterMap(bit_mask_iter, edge_index_map));
+
+
+		
 
 	}
 	
-	
+	//測試/////////////////
+	//印出usingPaths
+	print_usingPaths(graph, g_usingPaths);
+	//////////////////////
+
 	return 0;
 }
 
