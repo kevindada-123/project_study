@@ -62,7 +62,25 @@ MapOfName g_vertexNameMap;
 
 
 //使用 map 來記錄對於同個 src & dst 的 Request 的路徑
-std::map<std::pair<Vertex, Vertex>, std::set<std::list<Graph::edge_descriptor> > > g_usingPaths;
+struct UsingPathDetail
+{
+	std::list<Graph::edge_descriptor> edge_list;
+	int slot_begin;
+	int slot_num;
+
+};
+
+//UsingPathDetail 的比較原則
+struct UsingPathCmp
+{
+	bool operator() (const UsingPathDetail& lhs, const UsingPathDetail& rhs) const
+	{
+		return lhs.edge_list < rhs.edge_list;
+	}
+	
+};
+
+std::map<std::pair<Vertex, Vertex>, std::multiset<UsingPathDetail, UsingPathCmp> > g_usingPaths;
 
 
 

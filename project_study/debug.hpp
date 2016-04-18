@@ -96,19 +96,24 @@ namespace boost
 			file_out << "(" << src_name << "," << dst_name << ")" << std::endl;
 
 
-			//印出 path_set 裡的每條 path
-			auto path_set = v_and_path.second;
-			for (auto path : path_set)
+			//印出 set 裡的 path slot起始位置 slot數量
+
+			const auto& set = v_and_path.second;
+			for (const auto& detail : set)
 			{
 				//印出起點
 				file_out << src_name << " ";
 
-				for (auto edge : path)
+				//印出path
+				for (const auto& edge : detail.edge_list)
 				{
 					Vertex tar = target(edge, graph);
 					file_out << vertexNameMap[tar] << " ";
 				}
 
+				
+				//印出 slot 起始位置, slot數量
+				file_out << "(" << detail.slot_begin << "," << detail.slot_num << ")";
 				file_out << std::endl;
 			}
 

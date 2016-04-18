@@ -179,29 +179,26 @@ namespace boost
 
 	}
 
-	template<typename Map, typename Request, typename Path>
-	void path_recorder(Map& map,const Request& request,const Path& path)
+	template<typename Map, typename Request, typename Path, typename SlotAlloc>
+	void path_recorder(Map& map,const Request& request,const Path& path, const SlotAlloc& slot_alloc)
 	{
 		typename Map::iterator pos;
+		int slot_begin = slot_alloc.first;
+		int slot_num = slot_alloc.second;
 		using SetInMap = typename Map::mapped_type;
-		SetInMap set{ path };
+		UsingPathDetail using_path_detail{ path, slot_begin, slot_num };
+		SetInMap set{ using_path_detail };
 		bool inserted;
 		auto p = std::make_pair(request.src, request.dst);
 
 		tie(pos, inserted) = map.insert(std::make_pair(p, set) );
 
 		//當 inserted 結果為 false, 代表 map 中已經有相同 src 和 dst 的路徑
-		//在此將 path (型別是 list) 放入 set
+		//在此將 using_path_detail 放入 set
 		if (!inserted)
 		{
-			auto& path_set = pos->second;
-			//
-			typename std::set < std::list<Graph::edge_descriptor>>::iterator test1;
-			bool test2;
-			tie(test1, test2) = path_set.insert(path);
-
-			//
-			//path_set.insert(path);
+			SetInMap& using_path_datail_set = pos->second;
+			using_path_datail_set.insert(using_path_detail);
 		}
 		
 	}
@@ -348,11 +345,12 @@ namespace boost
 				}
 				std::cout << "起始點:" << max_block_a.first << " slot數量:" << ni << std::endl << std::endl;
 
-			}
 
-			//將有分配slot的路徑記錄到 map 裡
-			path_recorder(g_usingPaths, request, weight_and_path.second);
+				//將有分配slot的路徑記錄到 map 裡
+				auto slot_alloc = std::make_pair(max_block_a.first, ni);
+				path_recorder(g_usingPaths, request, weight_and_path.second, slot_alloc);
 			
+			}
 
 
 			//需求已分配完成, 跳出迴圈
@@ -382,7 +380,7 @@ namespace boost
 				}
 			}
 
-
+			record_vector.clear();
 			/*此段程式有點疑問 暫時註解掉
 			//分配失敗, 刪除記錄在 g_usingPaths 中的 path (k條)
 			path_recorder_remove(g_usingPaths, request, k_path);
