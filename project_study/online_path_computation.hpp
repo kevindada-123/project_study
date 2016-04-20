@@ -206,7 +206,7 @@ namespace boost
 	{
 		auto key_vertex_pair = std::make_pair(request.src, request.dst);
 		using SetInMap = typename Map::mapped_type;
-		SetInMap set = map.find(key_vertex_pair) -> second;
+		SetInMap& set = map.find(key_vertex_pair) -> second;
 
 		for (auto using_path_detail : alloced_path_recoder)
 			set.erase(using_path_detail);
