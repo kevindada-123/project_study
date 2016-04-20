@@ -179,42 +179,40 @@ namespace boost
 
 	}
 
-	template<typename Map, typename Request, typename Path, typename SlotAlloc>
-	void path_recorder(Map& map,const Request& request,const Path& path, const SlotAlloc& slot_alloc)
+	template<typename Map, typename Request, typename UsingPathDetail>
+	void path_recorder(Map& map,const Request& request,const UsingPathDetail& using_path_detail)
 	{
-		typename Map::iterator pos;
-		int slot_begin = slot_alloc.first;
-		int slot_num = slot_alloc.second;
 		using SetInMap = typename Map::mapped_type;
-		UsingPathDetail using_path_detail{ path, slot_begin, slot_num };
 		SetInMap set{ using_path_detail };
+		typename Map::iterator pos;
 		bool inserted;
-		auto p = std::make_pair(request.src, request.dst);
+		auto key_vertex_pair = std::make_pair(request.src, request.dst);
 
-		tie(pos, inserted) = map.insert(std::make_pair(p, set) );
+		tie(pos, inserted) = map.insert(std::make_pair(key_vertex_pair, set) );
 
 		//當 inserted 結果為 false, 代表 map 中已經有相同 src 和 dst 的路徑
 		//在此將 using_path_detail 放入 set
 		if (!inserted)
 		{
+			
 			SetInMap& using_path_datail_set = pos->second;
-			using_path_datail_set.insert(using_path_detail);
+			using_path_datail_set.insert(using_path_detail);			
 		}
-		
+			
 	}
 
-	template<typename Map, typename Request, typename KPath>
-	void path_recorder_remove(Map& map, const Request& request, const KPath& k_path)
+	template<typename Map, typename Request, typename AllocedPath>
+	void path_recorder_remove(Map& map, const Request& request, const AllocedPath& alloced_path_recoder)
 	{
-		auto p = std::make_pair(request.src, request.dst);
+		auto key_vertex_pair = std::make_pair(request.src, request.dst);
+		using SetInMap = typename Map::mapped_type;
+		SetInMap set = map.find(key_vertex_pair) -> second;
 
-		auto result = map.find(p);
-		auto path_set = result->second;
+		for (auto using_path_detail : alloced_path_recoder)
+			set.erase(using_path_detail);
 
-		for (auto path : k_path)
-			path_set.erase(path.second);
-
-
+		if (set.size() == 0)
+			map.erase(key_vertex_pair);
 	}
 
 	template<typename Graph, typename Path, typename Request, typename BitMaskMap>
@@ -249,6 +247,9 @@ namespace boost
 		
 		//建立儲存每個紀錄的 vector
 		std::vector<alloc_record> record_vector;
+		//建立分配失敗時清除路徑用的 vector
+		std::vector<UsingPathDetail> allocated_path_recoder;
+
 		for (auto weight_and_path : k_path)//5條路徑
 		{
 			std::vector<int> bit_mask_a(B, 0); //大小=300的陣列(ai),內容預設為0
@@ -347,9 +348,9 @@ namespace boost
 
 
 				//將有分配slot的路徑記錄到 map 裡
-				auto slot_alloc = std::make_pair(max_block_a.first, ni);
-				path_recorder(g_usingPaths, request, weight_and_path.second, slot_alloc);
-			
+				UsingPathDetail using_path_detail{ weight_and_path.second, max_block_a.first, ni };
+				path_recorder(g_usingPaths, request, using_path_detail);
+				allocated_path_recoder.push_back(using_path_detail);
 			}
 
 
@@ -381,10 +382,9 @@ namespace boost
 			}
 
 			record_vector.clear();
-			/*此段程式有點疑問 暫時註解掉
-			//分配失敗, 刪除記錄在 g_usingPaths 中的 path (k條)
-			path_recorder_remove(g_usingPaths, request, k_path);
-			*/
+			
+			//分配失敗, 刪除記錄在 g_usingPaths 中的 path
+			path_recorder_remove(g_usingPaths, request, allocated_path_recoder);
 		}
 
 		return success;
