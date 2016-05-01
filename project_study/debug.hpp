@@ -32,6 +32,31 @@ namespace boost
 
 	}
 
+	//print k-path with something, ex: weight, max_block, fragmentation rate(ry
+	template<typename Graph, typename Sth_with_KPath>
+	void print_k_path_with_something(Graph graph, Sth_with_KPath sth_with_k_path_container)
+	{
+		auto name_map = get(vertex_name, graph);
+
+		for (const auto& sth_with_k_path : sth_with_k_path_container)
+		{
+			std::cout << sth_with_k_path.first << " ";
+
+			auto path = sth_with_k_path.second;
+
+			//印出path中第一個edge的src
+			auto first_edge = *(path.begin());
+			std::cout << get(name_map, source(first_edge, graph)) << " ";
+
+			for (const auto& edge : path)
+				std::cout << get(name_map, target(edge, graph)) << " ";
+
+			std::cout << std::endl;
+		}
+
+	}
+
+
 	//print bitmask to file
 	template<typename Graph, typename BitMaskMap>
 	void bit_mask_print(Graph graph, const std::vector<std::vector<int>>& bit_mask, BitMaskMap& bit_mask_map)

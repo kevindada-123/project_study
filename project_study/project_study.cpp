@@ -17,7 +17,7 @@
 #include "yen_ksp.hpp"
 #include "online_path_computation.hpp"
 #include "debug.hpp"
-
+#include "add.h"
 
 #define G 1
 #define M_MAX 4
@@ -258,7 +258,14 @@ int main()
 		std::cout << "s=" << src_name << " d=" << dst_name << " C=" << request.cap << std::endl << std::endl;
 
 
-		bool success = online_path_computation(graph, request, IterMap(bit_mask_iter, edge_index_map));
+		/////////////////////////
+		//使用演算法1
+		//bool success = online_path_computation(graph, request, IterMap(bit_mask_iter, edge_index_map));
+		//使用add
+		bool success = add(graph, request, IterMap(bit_mask_iter, edge_index_map));
+		////////////////////////
+
+
 		std::cout << "請求" << req_num << "結果 : ";
 		if (success)
 			std::cout << "success!" << std::endl;
@@ -275,9 +282,12 @@ int main()
 
 	}
 	
+	
+
+
 	//測試/////////////////
 	//印出usingPaths
-	print_usingPaths(graph, g_usingPaths);
+	/*print_usingPaths(graph, g_usingPaths);*/
 	//////////////////////
 
 	return 0;
