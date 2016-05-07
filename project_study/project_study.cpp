@@ -13,15 +13,17 @@
 #include <ctime>
 #include <vector>
 #include <iterator>
-
 #include "yen_ksp.hpp"
-#include "online_path_computation.hpp"
-#include "debug.hpp"
-#include "add.h"
 
 #define G 1
 #define M_MAX 4
 #define B 300
+#define Cslot 12.5
+#define GB 7
+
+#include "online_path_computation.hpp"
+#include "debug.hpp"
+#include "expand.h"
 
 using namespace boost;
 
@@ -224,7 +226,13 @@ int main()
 
 	//read request from request1.txt
 	Request request;//(src,dst,cap)
-	std::ifstream file_request("request1.txt");
+	//std::ifstream file_request("request1.txt");
+
+
+	//測試expand 使用request2.txt/////////////////////////
+	std::ifstream file_request("request2.txt");
+
+
 	if (!file_request)
 	{
 		std::cerr << "No request1.txt file!!" << std::endl;
@@ -238,8 +246,6 @@ int main()
 	using IterType = std::vector<std::vector<int>>::iterator;
 	using IterMap = iterator_property_map<IterType, EdgeIndexMap>;
 	IterType bit_mask_iter = edge_bit_mask.begin();
-
-
 
 
 	for (std::string line; std::getline(file_request, line);)
@@ -258,15 +264,26 @@ int main()
 		std::cout << "s=" << src_name << " d=" << dst_name << " C=" << request.cap << std::endl << std::endl;
 
 
-		/////////////////////////
-		//使用演算法1
-		//bool success = online_path_computation(graph, request, IterMap(bit_mask_iter, edge_index_map));
-		//使用add
-		bool success = add(graph, request, IterMap(bit_mask_iter, edge_index_map));
-		////////////////////////
+		//在此判斷需求類型
+		std::string req_type;		
+		std::pair<Vertex, Vertex> vertex_pair = std::make_pair(request.src, request.dst);
+		auto find_result = g_usingPaths.find(vertex_pair);
+		
+		//(src, dst) 在 g_usingPath 未出現過 代表新增
+		if (find_result == g_usingPaths.end())
+			req_type = "add";
+		else if (find_result != g_usingPaths.end())
+			req_type = "expand";
+		
+		//開始針對需求進行分配
+		bool success = false;
+		if(req_type == "add")
+			success = online_path_computation(graph, request, IterMap(bit_mask_iter, edge_index_map));
+		else if (req_type == "expand")
+			success = expand(graph, request, IterMap(bit_mask_iter, edge_index_map));
 
 
-		std::cout << "請求" << req_num << "結果 : ";
+		std::cout << "請求" << req_num << " 類型: " << req_type << "結果 : ";
 		if (success)
 			std::cout << "success!" << std::endl;
 		else

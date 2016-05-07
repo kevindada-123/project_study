@@ -15,10 +15,6 @@
 
 #include "yen_ksp.hpp"
 
-#define G 1
-#define M_MAX 4
-#define B 300
-#define Cslot 12.5
 
 namespace boost
 {
