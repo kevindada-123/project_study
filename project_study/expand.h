@@ -22,7 +22,7 @@ namespace boost
 
 	//計算mi
 	template<typename Graph, typename Request, typename Path>
-	int compute_mi(const Graph& graph, const Request& request, const Path& path)
+	int calculate_mi(const Graph& graph, const Request& request, const Path& path)
 	{
 		//先計算出調變等級mi
 		auto weight_map = get(edge_weight, graph);
@@ -33,6 +33,73 @@ namespace boost
 
 		return mi;
 	}
+
+	//針對path計算max_block
+	template<typename Path, typename BitMaskMap>
+	int calculate_path_max_block(const Path& path, const BitMaskMap& bit_mask_map)
+	{
+	
+		std::vector<int> bit_mask_a(B, 0); //大小=300的陣列(ai),內容預設為0
+		std::vector<int> bit_mask_b;
+		for (const auto& edge : path)
+		{
+			bit_mask_b = get(bit_mask_map, edge); //取得邊的bit mask map
+
+			for (int i = 0; i < B; ++i)
+				bit_mask_a[i] = bit_mask_b[i] || bit_mask_a[i]; //做OR
+
+		}
+		std::pair<int, int> max_block_a = max_block(bit_mask_a); //得到aimax的 起始位置,大小
+
+		int result = max_block_a.second;
+
+		return result;
+	}
+
+	//對using_path_detail_vector以max_block大小進行排序
+	template<typename UsingPathDetailVector, typename BitMaskMap>
+	void resort_by_max_block(UsingPathDetailVector& using_path_detail_vector,const BitMaskMap& bit_mask_map)
+	{
+		auto cmp = [&](const typename UsingPathDetailVector::value_type& lhs,const typename UsingPathDetailVector::value_type& rhs)
+		{	
+			int lhs_result = calculate_path_max_block(lhs.edge_list, bit_mask_map);
+			int rhs_result = calculate_path_max_block(rhs.edge_list, bit_mask_map);
+			return lhs_result > rhs_result; 
+		};
+		
+
+		std::sort(using_path_detail_vector.begin(), using_path_detail_vector.end(), cmp);
+	}
+
+	template <typename UsingPathDetailSet, typename UsingPathDetailVectorIterator>
+	typename UsingPathDetailSet::iterator find_iterator_in_set
+	(const UsingPathDetailSet& _multiset, const UsingPathDetailVectorIterator& _vector_iterator)
+	{
+		typename UsingPathDetailSet::iterator result{};
+		
+		//先取出vector裡的元素
+		auto vector_element = *_vector_iterator;
+
+		//找到在multiset裡對應的元素的範圍
+		typename UsingPathDetailSet::iterator equal_range_begin, equal_range_end;
+		tie(equal_range_begin, equal_range_end) = _multiset.equal_range(vector_element);
+
+		//在找到的範圍裡找出slot_begin, slot_num一樣的元素
+		for (; equal_range_begin != equal_range_end; ++equal_range_begin)
+		{
+			auto set_element = *equal_range_begin;
+
+			if (vector_element == set_element)
+			{
+				result = equal_range_begin;
+				break;
+			}
+
+		}
+
+		return result;
+	}
+
 
 	int checkleft(int bitmask_left, const std::vector<int>& edge_bit_mask)//檢測可以最多擴充多少
 	{
@@ -73,9 +140,8 @@ namespace boost
 	}
 
 
-	//以下放在另外一個hpp	
-	//下面檢測是否可以擴充
-		//目前只修改外部屬性的bitmask,還沒修改 usingpathdetail的slot_begin和slot_number
+	
+	//expand 主程式
 	template<typename Graph, typename Request, typename BitMaskMap>
 	bool expand(const Graph& graph, Request& request, BitMaskMap& bit_mask_map)
 	{
@@ -88,10 +154,16 @@ namespace boost
 		int bitmask_left;
 		int bitmask_right;
 		
-		auto& usedPaths = g_usingPaths.find(std::make_pair(sourece, destination))->second;//這裡找到edge_list(path)的set
+		auto& usedPaths = g_usingPaths.find(std::make_pair(sourece, destination))->second;//這裡找到UsingPathDetail的set
 
+		//因為無法直接對multiset進行排序, 所以將multiset內容copy到vector, 再進行排序
+		std::vector<UsingPathDetail> usedPaths_vector{ usedPaths.begin(), usedPaths.end() };
 
-		for(auto iter = usedPaths.begin(); iter != usedPaths.end();)//根據每條path去檢查和分配
+		//UsingPathDetail的set以max_block大小進行排序
+		resort_by_max_block(usedPaths_vector, bit_mask_map);
+
+		//根據在vector每條path去檢查和分配, 會將更改的usingPathDetail內容寫到multiset(就是usedPaths)
+		for(auto iter = usedPaths_vector.begin(); iter != usedPaths_vector.end();)
 		{
 			auto path = iter->edge_list;
 			
@@ -147,7 +219,7 @@ namespace boost
 			
 
 
-			int mi = compute_mi(graph, request, path);
+			int mi = calculate_mi(graph, request, path);
 			if (max_left_range != 0)
 			{
 				//先以左邊去擴充
@@ -164,11 +236,16 @@ namespace boost
 				//更改g_usingPaths裡的multiset內容
 				int old_slot_begin = iter->slot_begin;
 				int old_slot_num = iter->slot_num;
-				iter = usedPaths.erase(iter);
+				//找到目前在vector裡的元素對應到的multiset裡的元素
+				auto multiset_iterator_left = find_iterator_in_set(usedPaths, iter);
+				multiset_iterator_left = usedPaths.erase(multiset_iterator_left);
 				int new_slot_begin = old_slot_begin - ni;
 				int new_slot_num = old_slot_num + ni;
 				UsingPathDetail updated_using_path_detail{ path, new_slot_begin , new_slot_num };
-				iter = usedPaths.emplace_hint(iter, updated_using_path_detail);
+				multiset_iterator_left = usedPaths.insert(multiset_iterator_left, updated_using_path_detail);
+				//也要把更新的元素寫回vector
+				iter->slot_begin = new_slot_begin;
+				iter->slot_num = new_slot_num;
 			}
 			
 			//如果左邊擴充即可滿足需求, 跳出迴圈
@@ -194,18 +271,23 @@ namespace boost
 				//更改g_usingPaths裡的multiset內容
 				int old_slot_begin = iter->slot_begin;
 				int old_slot_num = iter->slot_num;
-				iter = usedPaths.erase(iter);
+				//找到目前在vector裡的元素對應到的multiset裡的元素
+				auto multiset_iterator_right = find_iterator_in_set(usedPaths, iter);
+				multiset_iterator_right = usedPaths.erase(multiset_iterator_right);
 				int new_slot_begin = old_slot_begin;
 				int new_slot_num = old_slot_num + ni;
 				UsingPathDetail updated_using_path_detail{ path, new_slot_begin , new_slot_num };
-				iter = usedPaths.emplace_hint(iter, updated_using_path_detail);
+				multiset_iterator_right = usedPaths.emplace_hint(multiset_iterator_right, updated_using_path_detail);
+				//也要把更新的元素寫回vector
+				iter->slot_begin = new_slot_begin;
+				iter->slot_num = new_slot_num;
 			}				
 
 			//如果右邊擴充可滿足需求, 跳出迴圈
 			if (req_state)
 				break;
 
-			if (iter != usedPaths.end())
+			if (iter != usedPaths_vector.end())
 				++iter;
 		}
 

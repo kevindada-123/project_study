@@ -70,6 +70,12 @@ struct UsingPathDetail
 	int slot_begin;
 	int slot_num;
 
+	bool operator== (const UsingPathDetail& rhs) const
+	{
+		return (this->edge_list == rhs.edge_list) && (this->slot_begin == rhs.slot_begin)
+			&& (this->slot_num == rhs.slot_num);
+	}
+
 };
 
 //UsingPathDetail 的比較原則
@@ -224,13 +230,13 @@ int main()
 	//construct the graph把圖建立
 	construct_graph(file_in, graph);
 
-	//read request from request1.txt
 	Request request;//(src,dst,cap)
-	//std::ifstream file_request("request1.txt");
 
+	//測試add & expand 使用request1.txt//////////////////
+	std::ifstream file_request("request1.txt");
 
-	//測試expand 使用request2.txt/////////////////////////
-	std::ifstream file_request("request2.txt");
+	////測試expand 使用request2.txt/////////////////////////
+	//std::ifstream file_request("request2.txt");
 
 
 	if (!file_request)
@@ -280,7 +286,11 @@ int main()
 		if(req_type == "add")
 			success = online_path_computation(graph, request, IterMap(bit_mask_iter, edge_index_map));
 		else if (req_type == "expand")
+		{
 			success = expand(graph, request, IterMap(bit_mask_iter, edge_index_map));
+			if(!success)//擴充失敗時改用新增
+				success = online_path_computation(graph, request, IterMap(bit_mask_iter, edge_index_map));
+		}
 
 
 		std::cout << "請求" << req_num << " 類型: " << req_type << "結果 : ";

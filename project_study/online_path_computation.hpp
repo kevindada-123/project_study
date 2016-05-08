@@ -250,7 +250,7 @@ namespace boost
 		{
 			std::vector<int> bit_mask_a(B, 0); //大小=300的陣列(ai),內容預設為0
 
-											   //對路徑上的每條邊的be做OR
+			//對路徑上的每條邊的be做OR
 			for (auto edge : weight_and_path.second)
 			{
 				bit_mask_b = get(bit_mask_map, edge); //取得邊的bit mask map
