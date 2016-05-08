@@ -291,7 +291,7 @@ int main()
 		
 		/////輸出分配結果測試////
 		file_result << "mode: " << req_type << std::endl;
-		file_result << "需求內容: " << "s=" << src_name << ", d=" << dst_name << ", C=" << request.cap;
+		file_result << "request detail: " << "s=" << src_name << ", d=" << dst_name << ", C=" << request.cap;
 		file_result << std::endl << std::endl;
 		//先在此把file stream關掉
 		file_result.close();
@@ -311,7 +311,7 @@ int main()
 		/////輸出分配結果測試////
 		//再把file stream打開
 		file_result.open("result.txt", std::ios_base::app);
-		file_result << std::endl << "結果: ";
+		file_result << std::endl << "result: ";
 		if (success)
 			file_result << "success!" << std::endl;
 		else
@@ -320,8 +320,8 @@ int main()
 		file_result.close();
 		////////////////////////
 
-		////debug//測試//////////
-		//bit_mask_print(graph, edge_bit_mask, IterMap(bit_mask_iter, edge_index_map));
+		//debug//測試//////////
+		bit_mask_print(graph, edge_bit_mask, IterMap(bit_mask_iter, edge_index_map));
 
 		req_num++;
 	}

@@ -198,7 +198,6 @@ namespace boost
 		std::vector<UsingPathDetail> usedPaths_vector{ usedPaths.begin(), usedPaths.end() };
 
 
-
 		////UsingPathDetail的vector以max_block大小進行排序//////////////////////////////////////////
 		//resort_by_max_block(usedPaths_vector, bit_mask_map);
 
@@ -291,6 +290,12 @@ namespace boost
 				//也要把更新的元素寫回vector
 				iter->slot_begin = new_slot_begin;
 				iter->slot_num = new_slot_num;
+
+
+				/////輸出分配結果測試////
+				print_slot_begin_and_num(new_slot_begin, new_slot_num);
+				print_path(graph, path);
+				///////////////////////
 			}
 			
 			//如果左邊擴充即可滿足需求, 跳出迴圈
@@ -326,11 +331,20 @@ namespace boost
 				//也要把更新的元素寫回vector
 				iter->slot_begin = new_slot_begin;
 				iter->slot_num = new_slot_num;
+
+
+				/////輸出分配結果測試////
+				print_slot_begin_and_num(new_slot_begin, new_slot_num);
+				print_path(graph, path);
+				///////////////////////
 			}				
 
 			//如果右邊擴充可滿足需求, 跳出迴圈
 			if (req_state)
 				break;
+
+
+
 
 			if (iter != usedPaths_vector.end())
 				++iter;

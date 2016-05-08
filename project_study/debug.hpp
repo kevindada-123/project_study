@@ -11,7 +11,7 @@ namespace boost
 
 	//k-shortest path output
 	template<typename Graph, typename WeightMap, typename Request>
-	void k_path_print(Graph& graph, Request request, WeightMap& weight_map, int path_num)
+	void k_path_print(const Graph& graph,const Request& request,const WeightMap& weight_map, int path_num)
 	{
 
 		auto name_map = get(vertex_name, graph);
@@ -34,7 +34,7 @@ namespace boost
 
 	//print k-path with something, ex: weight, max_block, fragmentation rate(ry
 	template<typename Graph, typename Sth_with_KPath>
-	void print_k_path_with_something(Graph graph, Sth_with_KPath sth_with_k_path_container)
+	void print_k_path_with_something(const Graph& graph,const Sth_with_KPath& sth_with_k_path_container)
 	{
 		auto name_map = get(vertex_name, graph);
 
@@ -59,7 +59,7 @@ namespace boost
 
 	//print path with something, ex: weight, max_block, fragmentation rate(ry
 	template<typename Graph, typename SthWithPath>
-	void print_sth_with_path(Graph graph, SthWithPath sth_with_path)
+	void print_sth_with_path(const Graph& graph,const SthWithPath& sth_with_path)
 	{
 		std::ofstream file_result("result.txt", std::ios_base::app);
 			
@@ -90,10 +90,30 @@ namespace boost
 		file_result.close();
 	}
 
+	//print path
+	template<typename Graph, typename Path>
+	void print_path(const Graph& graph, const Path& path)
+	{
+		std::ofstream file_result("result.txt", std::ios_base::app);
+
+		auto name_map = get(vertex_name, graph);
+
+		//印出path中第一個edge的src
+		auto first_edge = *(path.begin());
+		file_result << get(name_map, source(first_edge, graph)) << " ";
+
+		for (const auto& edge : path)
+			file_result << get(name_map, target(edge, graph)) << " ";
+
+		file_result << std::endl;
+
+		file_result.close();
+	}
+
 
 	//print bitmask to file
 	template<typename Graph, typename BitMaskMap>
-	void bit_mask_print(Graph graph, const std::vector<std::vector<int>>& bit_mask, BitMaskMap& bit_mask_map)
+	void bit_mask_print(const Graph& graph, const std::vector<std::vector<int>>& bit_mask,const BitMaskMap& bit_mask_map)
 	{
 		using EdgeIter = typename graph_traits<Graph>::edge_iterator;
 		EdgeIter edge_iter, edge_end;
@@ -137,7 +157,7 @@ namespace boost
 
 	//print g_UsingPaths to file
 	template <typename Graph, typename UsingPaths>
-	void print_usingPaths(Graph graph, UsingPaths usingPaths)
+	void print_usingPaths(const Graph& graph,const UsingPaths& usingPaths)
 	{
 		std::ofstream file_out("UsingPaths.txt", std::ios_base::trunc);
 

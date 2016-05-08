@@ -235,7 +235,7 @@ namespace boost
 			int slots; //數量
 		};
 		
-		///////輸出分配結果測試////測試用/
+		///////////測試用/////
 		//int numb = 0;
 		//double req_cap = request.cap;
 		//int k = 1, kp = 1;
@@ -280,7 +280,7 @@ namespace boost
 			//算出ai []的Maxblock
 			std::pair<int, int> max_block_a = max_block(bit_mask_a); //得到aimax的 起始位置,大小
 
-																	 //算出路徑i的調變等級Mi(要用初始graph的距離)
+			//算出路徑i的調變等級Mi(要用初始graph的距離)
 			int d_weight_sum = 0;
 			for (auto edge : weight_and_path.second)//路徑的每條邊
 			{
