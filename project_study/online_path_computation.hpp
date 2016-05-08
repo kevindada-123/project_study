@@ -235,11 +235,12 @@ namespace boost
 			int slots; //數量
 		};
 		
-		///////////測試用////////////
-		int numb = 0;
-		double req_cap = request.cap;
-		int k = 1, kp = 1;
-		////////////end////////////
+		///////輸出分配結果測試////測試用/
+		//int numb = 0;
+		//double req_cap = request.cap;
+		//int k = 1, kp = 1;
+		//std::ofstream file_result("result.txt", std::ios_base::app);
+		//////////////end////////////
 		
 		//建立儲存每個紀錄的 vector
 		std::vector<alloc_record> record_vector;
@@ -287,39 +288,39 @@ namespace boost
 				d_weight_sum += weight;
 			}
 			int mi = mlvl(d_weight_sum);
-			//////////////////////測試用///////////////////////////////
-			numb++;
-			if (1 == numb)
-			{
-				int need_slot;
-				if ((int)(req_cap * 10) % (int)(mi*Cslot * 10) > 0)
-					need_slot = (int)(req_cap / (mi*Cslot)) + 1;
-				else if ((int)(req_cap * 10) % (int)(mi*Cslot * 10) == 0)
-					need_slot = (int)(req_cap / (mi*Cslot));
-				std::cout << "共需求slot數(不包含gb):" << need_slot << std::endl << std::endl;
-			}
-			/////////////////////////測試用///////////////////////////////////
-			std::cout << "k_path " << kp << " : ";
-			std::cout << get(name_map, request.src) << " ";
-			for (auto v : weight_and_path.second)
-			{
-				std::cout << get(name_map, target(v, graph)) << " ";
-			}
-			++kp;
-			std::cout << std::endl;
-			//////////////////////////end///////////////////////////////////
+			/////////////////////測試用////////////////////////
+			//numb++;
+			//if (1 == numb)
+			//{
+			//	int need_slot;
+			//	if ((int)(req_cap * 10) % (int)(mi*Cslot * 10) > 0)
+			//		need_slot = (int)(req_cap / (mi*Cslot)) + 1;
+			//	else if ((int)(req_cap * 10) % (int)(mi*Cslot * 10) == 0)
+			//		need_slot = (int)(req_cap / (mi*Cslot));
+			//	std::cout << "共需求slot數(不包含gb):" << need_slot << std::endl << std::endl;
+			//}
+			///////////////////////////測試用///////////////////////////////////
+			//std::cout << "k_path " << kp << " : ";
+			//std::cout << get(name_map, request.src) << " ";
+			//for (auto v : weight_and_path.second)
+			//{
+			//	std::cout << get(name_map, target(v, graph)) << " ";
+			//}
+			//++kp;
+			//std::cout << std::endl;
+			////////////////////////////end///////////////////////////////////
 			if (max_block_a.second >= G) //這條路徑可以用
 			{
-				/////////////////////////測試用///////////////////////////////////
-				std::cout << "可用路徑 " << k << ": ";
-				std::cout << get(name_map, request.src) << " ";
-				for (auto v : weight_and_path.second)
-				{
-					std::cout << get(name_map, target(v, graph)) << " ";
-				}
-				++k;
-				std::cout << std::endl;
-				//////////////////////////end///////////////////////////////////
+				///////////////////////////測試用///////////////////////////////////
+				//std::cout << "可用路徑 " << k << ": ";
+				//std::cout << get(name_map, request.src) << " ";
+				//for (auto v : weight_and_path.second)
+				//{
+				//	std::cout << get(name_map, target(v, graph)) << " ";
+				//}
+				//++k;
+				//std::cout << std::endl;
+				////////////////////////////end///////////////////////////////////
 
 				int ni;
 				tie(req_state, ni) = countNi(max_block_a.second, mi, request); //大小,調變,要求
@@ -340,7 +341,18 @@ namespace boost
 					alloc_record record{ edge, block_start , ni };
 					record_vector.push_back(record);
 				}
-				std::cout << "起始點:" << max_block_a.first << " slot數量:" << ni << std::endl << std::endl;
+
+				/////測試用////////////
+				//std::cout << "起始點:" << max_block_a.first << " slot數量:" << ni << std::endl << std::endl;
+				///////////////
+
+				/////輸出分配結果測試//////////////
+				//印出slot_begin slot_num
+				print_slot_begin_and_num(max_block_a.first, ni);
+				//印出sth with path
+				print_sth_with_path(graph, weight_and_path);
+				///////////////////////////////////
+
 
 
 				//將有分配slot的路徑記錄到 map 裡

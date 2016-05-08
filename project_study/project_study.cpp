@@ -207,10 +207,9 @@ void randreq()
 
 int main()
 {
-	std::cout << "程式開始" << std::endl;
 	std::ifstream file_in("graph_input.txt");
 
-	int req_num = 0;
+	
 	//如果沒 graph_input.txt, 顯示錯誤訊息並離開程式
 	if (!file_in)
 	{
@@ -254,10 +253,20 @@ int main()
 	IterType bit_mask_iter = edge_bit_mask.begin();
 
 
+	/////輸出分配結果用的file stream////////////輸出分配結果測試////
+	//每次開啟檔案時把內容清空再輸出
+	std::ofstream file_result("result.txt", std::ios_base::trunc);
+	file_result.close();
+	///////////////////////////////////////////////////
+
+	int req_num = 1;
 	for (std::string line; std::getline(file_request, line);)
 	{
-		req_num++;
-		std::cout << "請求" << req_num << ": ";
+		/////輸出分配結果測試////
+		file_result.open("result.txt", std::ios_base::app);
+		file_result << "request " << req_num << "  ";
+		/////////////////////////////
+
 		std::string src_name, dst_name;
 		std::istringstream(line) >> src_name >> dst_name >> request.cap;
 
@@ -267,7 +276,6 @@ int main()
 		auto dst_pos = g_vertexNameMap.find(dst_name);
 		request.src = src_pos->second;
 		request.dst = dst_pos->second;
-		std::cout << "s=" << src_name << " d=" << dst_name << " C=" << request.cap << std::endl << std::endl;
 
 
 		//在此判斷需求類型
@@ -281,6 +289,14 @@ int main()
 		else if (find_result != g_usingPaths.end())
 			req_type = "expand";
 		
+		/////輸出分配結果測試////
+		file_result << "mode: " << req_type << std::endl;
+		file_result << "需求內容: " << "s=" << src_name << ", d=" << dst_name << ", C=" << request.cap;
+		file_result << std::endl << std::endl;
+		//先在此把file stream關掉
+		file_result.close();
+		////////////////////////
+
 		//開始針對需求進行分配
 		bool success = false;
 		if(req_type == "add")
@@ -292,25 +308,26 @@ int main()
 				success = online_path_computation(graph, request, IterMap(bit_mask_iter, edge_index_map));
 		}
 
-
-		std::cout << "請求" << req_num << " 類型: " << req_type << "結果 : ";
+		/////輸出分配結果測試////
+		//再把file stream打開
+		file_result.open("result.txt", std::ios_base::app);
+		file_result << std::endl << "結果: ";
 		if (success)
-			std::cout << "success!" << std::endl;
+			file_result << "success!" << std::endl;
 		else
-			std::cout << "block!" << std::endl;
-		std::cout << "===========================================" << std::endl;
-
+			file_result << "block!" << std::endl;
+		file_result << std::endl << "------------------------------------" << std::endl;
+		file_result.close();
+		////////////////////////
 
 		////debug//測試//////////
 		//bit_mask_print(graph, edge_bit_mask, IterMap(bit_mask_iter, edge_index_map));
 
-
-		
-
+		req_num++;
 	}
 	
 	
-
+	
 
 	//測試/////////////////
 	//印出usingPaths
