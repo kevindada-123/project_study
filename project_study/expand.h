@@ -16,7 +16,6 @@
 #include "yen_ksp.hpp"
 #include "online_path_computation.hpp"
 
-
 namespace boost
 {
 
@@ -67,6 +66,45 @@ namespace boost
 			return lhs_result > rhs_result; 
 		};
 		
+
+		std::sort(using_path_detail_vector.begin(), using_path_detail_vector.end(), cmp);
+	}
+
+	//計算path的d'
+	template<typename Path, typename Graph, typename BitMaskMap>
+	double calculate_path_d_prime(Path path, Graph graph, BitMaskMap bit_mask_map)
+	{
+		//先更新d' (graph的weight2屬性)
+		//呼叫 online_path_computation裡的d_prime_convert
+		auto weight_map = get(edge_weight, graph);
+		d_prime_convert(graph, weight_map, bit_mask_map);
+
+		//宣告weight_2的map
+		auto weight_2_map = get(edge_weight2, graph);
+
+		//計算path的weight(用d')
+		double sum = 0;
+		for (const auto& edge : path)
+		{
+			double weight = get(weight_2_map, edge);
+			sum += weight;
+		}
+
+		return sum;
+
+	}
+
+	//對using_path_detail_vector以d_prime大小進行排序
+	template<typename UsingPathDetailVector,typename Graph ,typename BitMaskMap>
+	void resort_by_d_prime(UsingPathDetailVector& using_path_detail_vector, const Graph& graph, const BitMaskMap& bit_mask_map)
+	{
+		auto cmp = [&](const typename UsingPathDetailVector::value_type& lhs, const typename UsingPathDetailVector::value_type& rhs)
+		{
+			double lhs_result = calculate_path_d_prime(lhs.edge_list, graph, bit_mask_map);
+			double rhs_result = calculate_path_d_prime(rhs.edge_list, graph, bit_mask_map);
+
+			return lhs_result < rhs_result;
+		};
 
 		std::sort(using_path_detail_vector.begin(), using_path_detail_vector.end(), cmp);
 	}
@@ -159,8 +197,15 @@ namespace boost
 		//因為無法直接對multiset進行排序, 所以將multiset內容copy到vector, 再進行排序
 		std::vector<UsingPathDetail> usedPaths_vector{ usedPaths.begin(), usedPaths.end() };
 
-		//UsingPathDetail的set以max_block大小進行排序
-		resort_by_max_block(usedPaths_vector, bit_mask_map);
+
+
+		////UsingPathDetail的vector以max_block大小進行排序//////////////////////////////////////////
+		//resort_by_max_block(usedPaths_vector, bit_mask_map);
+
+		//UsingPathDetail的vector以d_prime大小進行排序//////////////////////////////////////////////
+		resort_by_d_prime(usedPaths_vector, graph, bit_mask_map);
+
+
 
 		//根據在vector每條path去檢查和分配, 會將更改的usingPathDetail內容寫到multiset(就是usedPaths)
 		for(auto iter = usedPaths_vector.begin(); iter != usedPaths_vector.end();)
