@@ -321,7 +321,7 @@ int main()
 		////////////////////////
 
 		//debug//測試//////////
-		bit_mask_print(graph, edge_bit_mask, IterMap(bit_mask_iter, edge_index_map));
+		bit_mask_print_separate(graph, edge_bit_mask, IterMap(bit_mask_iter, edge_index_map));
 
 		req_num++;
 	}

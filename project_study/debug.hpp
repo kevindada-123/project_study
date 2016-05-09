@@ -155,6 +155,56 @@ namespace boost
 	}
 
 
+	//print bitmask to file separate
+	template<typename Graph, typename BitMaskMap>
+	void bit_mask_print_separate(const Graph& graph, const std::vector<std::vector<int>>& bit_mask, const BitMaskMap& bit_mask_map)
+	{
+		using EdgeIter = typename graph_traits<Graph>::edge_iterator;
+		EdgeIter edge_iter, edge_end;
+		tie(edge_iter, edge_end) = edges(graph);//edges() 得到 graph 對於所有 edge 的 iterator
+		auto VertexNameMap = get(vertex_name, graph);
+
+
+		static int r_num = 1;
+
+		std::string r_num_string;
+
+		if(r_num < 10)
+			r_num_string = std::string("0") + std::to_string(r_num);
+		else
+			r_num_string = std::to_string(r_num);
+
+		std::string file_name = std::string("bit_mask_separate/request_") + r_num_string +
+			std::string(".txt");
+
+		std::ofstream file_out(file_name, std::ios_base::trunc);
+
+
+		file_out << "request " << r_num << std::endl;
+
+		//輸出按照邊的順序
+		for (; edge_iter != edge_end; ++edge_iter)
+		{
+			auto edge_bit_mask = get(bit_mask_map, *edge_iter);
+			Vertex source_v = source(*edge_iter, graph);
+			Vertex target_v = target(*edge_iter, graph);
+			file_out << std::setw(2) << resetiosflags(std::ios::left) << VertexNameMap[source_v] << " - "
+				<< std::setw(2) << setiosflags(std::ios::left) << VertexNameMap[target_v] << " ";
+
+			for (auto bit : edge_bit_mask)
+				file_out << bit;
+
+			file_out << std::endl;
+		}
+
+		file_out << std::endl;
+		++r_num;
+
+		file_out.close();
+	}
+
+
+
 	//print g_UsingPaths to file
 	template <typename Graph, typename UsingPaths>
 	void print_usingPaths(const Graph& graph,const UsingPaths& usingPaths)

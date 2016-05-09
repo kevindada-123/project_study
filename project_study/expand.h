@@ -147,7 +147,7 @@ namespace boost
 		if (bitmask_left == -1)
 			return 0;
 
-		for (int i = bitmask_left; i!= -1 ; ++i)//檢測可以最多擴充多少
+		for (int i = bitmask_left; i!= -1 ; --i)//檢測可以最多擴充多少
 		{
 			if (edge_bit_mask[i] == 1 || edge_bit_mask[i] == 7)
 				break;
@@ -235,19 +235,15 @@ namespace boost
 			{
 				auto edge_bit_mask = get(bit_mask_map, *iter2);
 				
-				if(bitmask_left == -1)
-				{ }
-				else if(edge_bit_mask[bitmask_left]==0)//向左邊檢查 如果slot正在被使用(1)或是當gb(7) 代表左邊無法擴充 反之則可以擴充
+				if(bitmask_left != -1)//向左邊檢查 如果slot正在被使用(1)或是當gb(7) 代表左邊無法擴充 反之則可以擴充
 				{
 					left_range.push_back(checkleft(bitmask_left, edge_bit_mask));
 				}
 
-				if(bitmask_right == B)
-				{ }
-				else if(edge_bit_mask[bitmask_right]==0)//向右邊檢查 如果slot正在被使用(1)或是當gb(7) 代表左邊無法擴充 反之則可以擴充
-			   {
-				   right_range.push_back(checkright(bitmask_right, edge_bit_mask));
-			   }
+			    if(bitmask_right != B)//向右邊檢查 如果slot正在被使用(1)或是當gb(7) 代表左邊無法擴充 反之則可以擴充
+			    {
+				    right_range.push_back(checkright(bitmask_right, edge_bit_mask));
+			    }
 			}
 
 			//找出左邊和右邊能擴充的範圍
