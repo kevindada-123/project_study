@@ -24,6 +24,8 @@
 #include "online_path_computation.hpp"
 #include "debug.hpp"
 #include "expand.h"
+#include "reduce_algo.hpp"
+#include "delete_algo.hpp"
 
 using namespace boost;
 
@@ -85,7 +87,7 @@ struct UsingPathCmp
 	{
 		return lhs.edge_list < rhs.edge_list;
 	}
-	
+
 };
 
 std::map<std::pair<Vertex, Vertex>, std::multiset<UsingPathDetail, UsingPathCmp> > g_usingPaths;
@@ -209,7 +211,7 @@ int main()
 {
 	std::ifstream file_in("graph_input.txt");
 
-	
+
 	//如果沒 graph_input.txt, 顯示錯誤訊息並離開程式
 	if (!file_in)
 	{
@@ -279,16 +281,16 @@ int main()
 
 
 		//在此判斷需求類型
-		std::string req_type;		
+		std::string req_type;
 		std::pair<Vertex, Vertex> vertex_pair = std::make_pair(request.src, request.dst);
 		auto find_result = g_usingPaths.find(vertex_pair);
-		
+
 		//(src, dst) 在 g_usingPath 未出現過 代表新增
 		if (find_result == g_usingPaths.end())
 			req_type = "add";
 		else if (find_result != g_usingPaths.end())
 			req_type = "expand";
-		
+
 		/////輸出分配結果測試////
 		file_result << "mode: " << req_type << std::endl;
 		file_result << "request detail: " << "s=" << src_name << ", d=" << dst_name << ", C=" << request.cap;
@@ -299,14 +301,21 @@ int main()
 
 		//開始針對需求進行分配
 		bool success = false;
-		if(req_type == "add")
+		if (request.cap < 0)
+		{
+			//std::cout << "請求" << req_num << "結果 : ";
+			success = reduce_algo(graph, g_usingPaths, request, IterMap(bit_mask_iter, edge_index_map));
+
+		}
+		else if (req_type == "add")
 			success = online_path_computation(graph, request, IterMap(bit_mask_iter, edge_index_map));
 		else if (req_type == "expand")
 		{
 			success = expand(graph, request, IterMap(bit_mask_iter, edge_index_map));
-			if(!success)//擴充失敗時改用新增
+			if (!success)//擴充失敗時改用新增
 				success = online_path_computation(graph, request, IterMap(bit_mask_iter, edge_index_map));
 		}
+
 
 		/////輸出分配結果測試////
 		//再把file stream打開
@@ -325,9 +334,9 @@ int main()
 
 		req_num++;
 	}
-	
-	
-	
+
+
+
 
 	//測試/////////////////
 	//印出usingPaths
