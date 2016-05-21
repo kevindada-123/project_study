@@ -199,10 +199,10 @@ namespace boost
 
 
 		////UsingPathDetail的vector以max_block大小進行排序//////////////////////////////////////////
-		//resort_by_max_block(usedPaths_vector, bit_mask_map);
+		resort_by_max_block(usedPaths_vector, bit_mask_map);
 
 		//UsingPathDetail的vector以d_prime大小進行排序//////////////////////////////////////////////
-		resort_by_d_prime(usedPaths_vector, graph, bit_mask_map);
+		//resort_by_d_prime(usedPaths_vector, graph, bit_mask_map);
 
 
 
@@ -332,17 +332,16 @@ namespace boost
 				/////輸出分配結果測試////
 				print_slot_begin_and_num(new_slot_begin, new_slot_num);
 				print_path(graph, path);
-				std::fstream file_result("result.txt", std::ios_base::in | std::ios_base::out);
 
-				file_result.seekp(-2, std::ios_base::end);
+				//先在sstream往前2個byte, 因為上面path_print有換行
+				result_ss.seekp(-2, std::ios_base::end);
 
 				//當 path 用 max_block 排序時用這個
-				//file_result << calculate_path_max_block(path, bit_mask_map);
+				result_ss << "(" << calculate_path_max_block(path, bit_mask_map) << ")" << std::endl;
 
 				//當 path 用 d' 排序時用這個
-				file_result << "(" << calculate_path_d_prime(path, graph, bit_mask_map) << ")" << std::endl;
+				//result_ss << "(" << calculate_path_d_prime(path, graph, bit_mask_map) << ")" << std::endl;
 
-				file_result.close();
 				///////////////////////
 			}				
 

@@ -7,6 +7,7 @@
 #include <list>
 #include <string>
 #include <fstream>
+#include <sstream>
 #include <utility>
 #include <map>
 #include <tuple>
@@ -20,6 +21,9 @@
 #define B 300
 #define Cslot 12.5
 #define GB 7
+
+//全域變數 
+std::stringstream result_ss;
 
 #include "add.hpp"
 #include "debug.hpp"
@@ -63,6 +67,9 @@ using EdgeIndexMap = property_map<Graph, edge_index_t>::type;
 //故另行使用(name, Vertex)的 map 方便以 name 當 key 的尋找
 using MapOfName = std::map<std::string, Vertex>;
 MapOfName g_vertexNameMap;
+
+
+
 
 
 //使用 map 來記錄對於同個 src & dst 的 Request 的路徑
@@ -255,18 +262,15 @@ int main()
 	IterType bit_mask_iter = edge_bit_mask.begin();
 
 
-	/////輸出分配結果用的file stream////////////輸出分配結果測試////
-	//每次開啟檔案時把內容清空再輸出
-	std::ofstream file_result("result.txt", std::ios_base::trunc);
-	file_result.close();
-	///////////////////////////////////////////////////
-
 	int req_num = 1;
+
+	//設定ostringstream buffer大小為10K
+	result_ss.rdbuf()->pubsetbuf(NULL, 10240);
+
 	for (std::string line; std::getline(file_request, line);)
 	{
 		/////輸出分配結果測試////
-		file_result.open("result.txt", std::ios_base::app);
-		file_result << "request " << req_num << "  ";
+		result_ss << "request " << req_num << "  ";
 		/////////////////////////////
 
 		std::string src_name, dst_name;
@@ -292,11 +296,9 @@ int main()
 			req_type = "expand";
 
 		/////輸出分配結果測試////
-		file_result << "mode: " << req_type << std::endl;
-		file_result << "request detail: " << "s=" << src_name << ", d=" << dst_name << ", C=" << request.cap;
-		file_result << std::endl << std::endl;
-		//先在此把file stream關掉
-		file_result.close();
+		result_ss << "mode: " << req_type << std::endl;
+		result_ss << "request detail: " << "s=" << src_name << ", d=" << dst_name << ", C=" << request.cap;
+		result_ss << std::endl << std::endl;
 		////////////////////////
 
 		//開始針對需求進行分配
@@ -318,15 +320,12 @@ int main()
 
 
 		/////輸出分配結果測試////
-		//再把file stream打開
-		file_result.open("result.txt", std::ios_base::app);
-		file_result << std::endl << "result: ";
+		result_ss << std::endl << "result: ";
 		if (success)
-			file_result << "success!" << std::endl;
+			result_ss << "success!" << std::endl;
 		else
-			file_result << "block!" << std::endl;
-		file_result << std::endl << "------------------------------------" << std::endl;
-		file_result.close();
+			result_ss << "block!" << std::endl;
+		result_ss << std::endl << "------------------------------------" << std::endl;
 		////////////////////////
 
 		//debug//測試//////////
@@ -335,7 +334,10 @@ int main()
 		req_num++;
 	}
 
-
+	std::ofstream file_result("result.txt", std::ios_base::trunc);
+	file_result.rdbuf()->pubsetbuf(NULL, 10240);
+	file_result << result_ss.rdbuf();
+	file_result.close();
 
 
 	//測試/////////////////

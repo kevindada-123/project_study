@@ -61,53 +61,43 @@ namespace boost
 	template<typename Graph, typename SthWithPath>
 	void print_sth_with_path(const Graph& graph,const SthWithPath& sth_with_path)
 	{
-		std::ofstream file_result("result.txt", std::ios_base::app);
-			
 		auto name_map = get(vertex_name, graph);
 		auto path = sth_with_path.second;
 
 		//印出path中第一個edge的src
 		auto first_edge = *(path.begin());
-		file_result << get(name_map, source(first_edge, graph)) << " ";
+		result_ss << get(name_map, source(first_edge, graph)) << " ";
 
 		for (const auto& edge : path)
-			file_result << get(name_map, target(edge, graph)) << " ";
+			result_ss << get(name_map, target(edge, graph)) << " ";
 
 		//印出(sth) 
-		file_result << "(" << sth_with_path.first << ")" << std::endl;
+		result_ss << "(" << sth_with_path.first << ")" << std::endl;
 
-		file_result.close();
 	}
 
 	void print_slot_begin_and_num(int slot_begin, int slot_num)
 	{
-		std::ofstream file_result("result.txt", std::ios_base::app);
-
 		//印出(slot_begin, slot_num)
-		file_result << "(" << slot_begin << "," << slot_num << ") ";
+		result_ss << "(" << slot_begin << "," << slot_num << ") ";
 
-
-		file_result.close();
 	}
 
 	//print path
 	template<typename Graph, typename Path>
 	void print_path(const Graph& graph, const Path& path)
 	{
-		std::ofstream file_result("result.txt", std::ios_base::app);
-
 		auto name_map = get(vertex_name, graph);
 
 		//印出path中第一個edge的src
 		auto first_edge = *(path.begin());
-		file_result << get(name_map, source(first_edge, graph)) << " ";
+		result_ss << get(name_map, source(first_edge, graph)) << " ";
 
 		for (const auto& edge : path)
-			file_result << get(name_map, target(edge, graph)) << " ";
+			result_ss << get(name_map, target(edge, graph)) << " ";
 
-		file_result << std::endl;
+		result_ss << std::endl;
 
-		file_result.close();
 	}
 
 
