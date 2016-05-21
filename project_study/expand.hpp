@@ -265,6 +265,10 @@ namespace boost
 				//先以左邊去擴充
 				tie(req_state, ni) = countNi(max_left_range, mi, request);
 
+				/////輸出分配結果測試////
+				int path_max_block = calculate_path_max_block(path, bit_mask_map);
+				////////////////////////
+
 				//先對左邊擴充
 				for (const auto& edge : path)
 				{
@@ -291,6 +295,16 @@ namespace boost
 				/////輸出分配結果測試////
 				print_slot_begin_and_num(new_slot_begin, new_slot_num);
 				print_path(graph, path);
+
+				//先在sstream往前2個byte, 因為上面path_print有換行
+				result_ss.seekp(-2, std::ios_base::end);
+
+				//當 path 用 max_block 排序時用這個
+				result_ss << "(" << calculate_path_max_block(path, bit_mask_map) << ")" << std::endl;
+
+				//當 path 用 d' 排序時用這個
+				//result_ss << "(" << calculate_path_d_prime(path, graph, bit_mask_map) << ")" << std::endl;
+
 				///////////////////////
 			}
 			
@@ -301,6 +315,10 @@ namespace boost
 			else if (max_right_range != 0)
 			{
 				tie(req_state, ni) = countNi(max_right_range, mi, request);
+				
+				/////輸出分配結果測試////
+				int path_max_block = calculate_path_max_block(path, bit_mask_map);
+				////////////////////////
 
 				//對右邊擴充
 				for (const auto& edge : path)
@@ -337,7 +355,7 @@ namespace boost
 				result_ss.seekp(-2, std::ios_base::end);
 
 				//當 path 用 max_block 排序時用這個
-				result_ss << "(" << calculate_path_max_block(path, bit_mask_map) << ")" << std::endl;
+				result_ss << "(" << path_max_block << ")" << std::endl;
 
 				//當 path 用 d' 排序時用這個
 				//result_ss << "(" << calculate_path_d_prime(path, graph, bit_mask_map) << ")" << std::endl;
