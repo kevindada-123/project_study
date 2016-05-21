@@ -21,9 +21,9 @@
 #define Cslot 12.5
 #define GB 7
 
-#include "online_path_computation.hpp"
+#include "add.hpp"
 #include "debug.hpp"
-#include "expand.h"
+#include "expand.hpp"
 #include "reduce_algo.hpp"
 #include "delete_algo.hpp"
 
@@ -304,16 +304,16 @@ int main()
 		if (request.cap < 0)
 		{
 			//std::cout << "請求" << req_num << "結果 : ";
-			success = reduce_algo(graph, g_usingPaths, request, IterMap(bit_mask_iter, edge_index_map));
+			//success = reduce_algo(graph, g_usingPaths, request, IterMap(bit_mask_iter, edge_index_map));
 
 		}
 		else if (req_type == "add")
-			success = online_path_computation(graph, request, IterMap(bit_mask_iter, edge_index_map));
+			success = add(graph, request, IterMap(bit_mask_iter, edge_index_map));
 		else if (req_type == "expand")
 		{
 			success = expand(graph, request, IterMap(bit_mask_iter, edge_index_map));
 			if (!success)//擴充失敗時改用新增
-				success = online_path_computation(graph, request, IterMap(bit_mask_iter, edge_index_map));
+				success = add(graph, request, IterMap(bit_mask_iter, edge_index_map));
 		}
 
 

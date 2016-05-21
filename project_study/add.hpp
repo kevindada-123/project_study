@@ -1,5 +1,5 @@
-﻿#ifndef OPC_H
-#define OPC_H
+﻿#ifndef ADD_H
+#define ADD_H
 
 #include <string>
 #include <algorithm>
@@ -235,12 +235,6 @@ namespace boost
 			int slots; //數量
 		};
 		
-		///////////測試用/////
-		//int numb = 0;
-		//double req_cap = request.cap;
-		//int k = 1, kp = 1;
-		//std::ofstream file_result("result.txt", std::ios_base::app);
-		//////////////end////////////
 		
 		//建立儲存每個紀錄的 vector
 		std::vector<alloc_record> record_vector;
@@ -263,15 +257,6 @@ namespace boost
 
 			}
 
-			//////////////*測試一條路徑不夠時會不會分流*/
-			/*
-			for (int i = 0; i < 290; ++i)
-			{
-			bit_mask_a[i] = 1;
-			}
-			*/
-			///////////////end/////////////////////////
-
 			//NOT,得到ai[]
 			/*for (int i = 0; i < B; ++i)
 			{
@@ -288,40 +273,9 @@ namespace boost
 				d_weight_sum += weight;
 			}
 			int mi = mlvl(d_weight_sum);
-			/////////////////////測試用////////////////////////
-			//numb++;
-			//if (1 == numb)
-			//{
-			//	int need_slot;
-			//	if ((int)(req_cap * 10) % (int)(mi*Cslot * 10) > 0)
-			//		need_slot = (int)(req_cap / (mi*Cslot)) + 1;
-			//	else if ((int)(req_cap * 10) % (int)(mi*Cslot * 10) == 0)
-			//		need_slot = (int)(req_cap / (mi*Cslot));
-			//	std::cout << "共需求slot數(不包含gb):" << need_slot << std::endl << std::endl;
-			//}
-			///////////////////////////測試用///////////////////////////////////
-			//std::cout << "k_path " << kp << " : ";
-			//std::cout << get(name_map, request.src) << " ";
-			//for (auto v : weight_and_path.second)
-			//{
-			//	std::cout << get(name_map, target(v, graph)) << " ";
-			//}
-			//++kp;
-			//std::cout << std::endl;
-			////////////////////////////end///////////////////////////////////
+			
 			if (max_block_a.second >= G) //這條路徑可以用
 			{
-				///////////////////////////測試用///////////////////////////////////
-				//std::cout << "可用路徑 " << k << ": ";
-				//std::cout << get(name_map, request.src) << " ";
-				//for (auto v : weight_and_path.second)
-				//{
-				//	std::cout << get(name_map, target(v, graph)) << " ";
-				//}
-				//++k;
-				//std::cout << std::endl;
-				////////////////////////////end///////////////////////////////////
-
 				int ni;
 				tie(req_state, ni) = countNi(max_block_a.second, mi, request); //大小,調變,要求
 																			   //對經過的每條 edge(link) 做 slot 的分配
@@ -341,10 +295,6 @@ namespace boost
 					alloc_record record{ edge, block_start , ni };
 					record_vector.push_back(record);
 				}
-
-				/////測試用////////////
-				//std::cout << "起始點:" << max_block_a.first << " slot數量:" << ni << std::endl << std::endl;
-				///////////////
 
 				/////輸出分配結果測試//////////////
 				//印出slot_begin slot_num
@@ -400,7 +350,7 @@ namespace boost
 
 
 	template<typename Graph, typename Request, typename BitMaskMap>
-	bool online_path_computation(Graph& graph, Request& request, BitMaskMap& bit_mask_map)
+	bool add(Graph& graph, Request& request, BitMaskMap& bit_mask_map)
 	{
 		//和演算法 2 不同的地方, 除下面這兩個函式呼叫之外 algorithm_detail 應該皆同(未實測)
 		//G(V, E, B, D) → G'(V, E, D')
@@ -416,4 +366,4 @@ namespace boost
 
 }//boost
 
-#endif //OPC_H
+#endif //ADD_H
