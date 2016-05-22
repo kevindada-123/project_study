@@ -242,10 +242,13 @@ int main()
 	Request request;//(src,dst,cap)
 
 	//測試add & expand 使用request1.txt//////////////////
-	std::ifstream file_request("request1.txt");
+	//std::ifstream file_request("request1.txt");
 
-	////測試expand 使用request2.txt/////////////////////////
+	//測試expand 使用request2.txt/////////////////////////
 	//std::ifstream file_request("request2.txt");
+
+	//測試 add expand delete reduce 使用 resquest_test.txt
+	std::ifstream file_request("request_test.txt");
 
 
 	if (!file_request)
@@ -310,7 +313,7 @@ int main()
 		if (request.cap < 0)
 		{
 			//std::cout << "請求" << req_num << "結果 : ";
-			//success = reduce_algo(graph, g_usingPaths, request, IterMap(bit_mask_iter, edge_index_map));
+			success = reduce_algo(graph, g_usingPaths, request, IterMap(bit_mask_iter, edge_index_map));
 
 		}
 		else if (req_type == "add")
@@ -328,7 +331,7 @@ int main()
 		{
 			auto timer_2 = std::chrono::high_resolution_clock::now();
 			std::chrono::duration<double> during_time = timer_2 - timer_1;
-			std::cout << "after " << req_num << " requests, during time: " << during_time.count() << "sec" << std::endl;
+			//std::cout << "after " << req_num << " requests, during time: " << during_time.count() << "sec" << std::endl;
 			timer_1 = std::chrono::high_resolution_clock::now();
 		}
 
@@ -342,7 +345,7 @@ int main()
 		////////////////////////
 
 		//debug//測試//////////
-		bit_mask_print_separate(graph, edge_bit_mask, IterMap(bit_mask_iter, edge_index_map));
+		//bit_mask_print_separate(graph, edge_bit_mask, IterMap(bit_mask_iter, edge_index_map));
 
 		req_num++;
 	}

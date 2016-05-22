@@ -15,6 +15,7 @@
 
 #include "yen_ksp.hpp"
 #include "add.hpp"
+#include "delete_algo.hpp"
 
 
 
@@ -233,7 +234,6 @@ namespace boost
 		auto vertex = (result->second).begin();
 		for (i = 0; i < n; i++)
 		{
-			std::cout << "i=" << i << " ";
 			for (const auto& edge : (*vertex).edge_list)//對第一條~最後一條邊
 			{
 				path_weight = path_weight + get(edge_weight, graph, edge); //得到某條邊的weight ->取得路徑總長度
@@ -257,8 +257,8 @@ namespace boost
 		if (have_bandwidth < request.cap)
 		{
 			std::cout << "縮減頻寬大於連線頻寬，刪除連線!!\n";
-			//清掉
-			return false;
+			return delete_algo(graph, usingPaths, request, bit_mask_map);
+			//return false;
 		}
 		bubbleSort(priority_sort, n, leftbig);//依優先權資料排序
 
@@ -352,7 +352,7 @@ namespace boost
 				}
 				if (cap > 0) //全做完如果還有沒刪的 浪費的頻寬數
 				{
-					std::cout << "浪費" << cap << "\n";
+					//std::cout << "浪費" << cap << "\n";
 					break;
 				}
 				else break;
