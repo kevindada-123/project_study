@@ -330,19 +330,23 @@ namespace boost
 			success = false;
 
 			//分配失敗, 進行歸還
-			for (auto rec : record_vector)//對整個record_vector
+			if (record_vector.size() != 0)
 			{
-				BitMask& bit_mask = get(bit_mask_map, rec.e);
-				for (int pos = rec.pos; pos != rec.pos + rec.slots; ++pos)
+				for (auto rec : record_vector)//對整個record_vector
 				{
-					bit_mask[pos] = 0;
+					BitMask& bit_mask = get(bit_mask_map, rec.e);
+					for (int pos = rec.pos; pos != rec.pos + rec.slots; ++pos)
+					{
+						bit_mask[pos] = 0;
+					}
 				}
+				record_vector.clear();
 			}
-
-			record_vector.clear();
+					
 			
 			//分配失敗, 刪除記錄在 g_usingPaths 中的 path
-			path_recorder_remove(g_usingPaths, request, allocated_path_recoder);
+			if(allocated_path_recoder.size() != 0)
+				path_recorder_remove(g_usingPaths, request, allocated_path_recoder);
 		}
 
 		return success;
