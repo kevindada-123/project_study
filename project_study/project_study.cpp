@@ -298,8 +298,12 @@ int main()
 		auto find_result = g_usingPaths.find(vertex_pair);
 
 		//(src, dst) 在 g_usingPath 未出現過 代表新增
-		if (find_result == g_usingPaths.end())
+		if (find_result == g_usingPaths.end() && request.cap > 0)
 			req_type = "add";
+		else if (find_result == g_usingPaths.end() && request.cap == 0)
+			req_type = "delete";
+		else if (find_result == g_usingPaths.end() && request.cap < 0)
+			req_type = "reduce";
 		else if (find_result != g_usingPaths.end())
 			req_type = "expand";
 
@@ -311,7 +315,7 @@ int main()
 
 		//開始針對需求進行分配
 		bool success = false;
-		if (request.cap < 0)
+		if (request.cap <= 0)
 		{
 			//std::cout << "請求" << req_num << "結果 : ";
 			success = reduce_algo(graph, g_usingPaths, request, IterMap(bit_mask_iter, edge_index_map));
