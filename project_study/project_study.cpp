@@ -14,6 +14,7 @@
 #include <ctime>
 #include <vector>
 #include <iterator>
+#include <chrono>
 #include "yen_ksp.hpp"
 
 #define G 1
@@ -267,6 +268,9 @@ int main()
 	//設定ostringstream buffer大小為10K
 	result_ss.rdbuf()->pubsetbuf(NULL, 10240);
 
+	//計時
+	auto timer_1 = std::chrono::high_resolution_clock::now();
+
 	for (std::string line; std::getline(file_request, line);)
 	{
 		/////輸出分配結果測試////
@@ -318,6 +322,15 @@ int main()
 				success = add(graph, request, IterMap(bit_mask_iter, edge_index_map));
 		}
 
+
+		//計時
+		if (req_num % 10 == 0)
+		{
+			auto timer_2 = std::chrono::high_resolution_clock::now();
+			std::chrono::duration<double> during_time = timer_2 - timer_1;
+			std::cout << "after " << req_num << " requests, during time: " << during_time.count() << "sec" << std::endl;
+			timer_1 = std::chrono::high_resolution_clock::now();
+		}
 
 		/////輸出分配結果測試////
 		result_ss << std::endl << "result: ";
