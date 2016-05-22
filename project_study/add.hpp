@@ -300,7 +300,7 @@ namespace boost
 				//印出slot_begin slot_num
 				print_slot_begin_and_num(max_block_a.first, ni);
 				//印出sth with path
-				print_sth_with_path(graph, weight_and_path);
+				print_path(graph, weight_and_path.second);
 				///////////////////////////////////
 
 

@@ -300,12 +300,12 @@ int main()
 		//(src, dst) 在 g_usingPath 未出現過 代表新增
 		if (find_result == g_usingPaths.end() && request.cap > 0)
 			req_type = "add";
-		else if (find_result == g_usingPaths.end() && request.cap == 0)
+		else if (request.cap == 0)
 			req_type = "delete";
-		else if (find_result == g_usingPaths.end() && request.cap < 0)
-			req_type = "reduce";
-		else if (find_result != g_usingPaths.end())
+		else if (find_result != g_usingPaths.end() && request.cap > 0)
 			req_type = "expand";
+		else if (request.cap < 0)
+			req_type = "reduce";
 
 		/////輸出分配結果測試////
 		result_ss << "mode: " << req_type << std::endl;
@@ -315,25 +315,24 @@ int main()
 
 		//開始針對需求進行分配
 		bool success = false;
-		if (request.cap <= 0)
-		{
-			//std::cout << "請求" << req_num << "結果 : ";
-			success = reduce_algo(graph, g_usingPaths, request, IterMap(bit_mask_iter, edge_index_map));
-
-		}
-		else if (req_type == "add")
+		if (req_type == "add")
 			success = add(graph, request, IterMap(bit_mask_iter, edge_index_map));
+		else if (req_type == "delete")
+			success = delete_algo(graph, g_usingPaths, request, IterMap(bit_mask_iter, edge_index_map));
 		else if (req_type == "expand")
 		{
 			success = expand(graph, request, IterMap(bit_mask_iter, edge_index_map));
 			if (!success)//擴充失敗時改用新增
 				success = add(graph, request, IterMap(bit_mask_iter, edge_index_map));
 		}
+		else if (req_type == "reduce")
+			success = reduce_algo(graph, g_usingPaths, request, IterMap(bit_mask_iter, edge_index_map));
 
 
-		//計時
+		//統計數據
 		if (req_num % 10 == 0)
 		{
+			//計時
 			auto timer_2 = std::chrono::high_resolution_clock::now();
 			std::chrono::duration<double> during_time = timer_2 - timer_1;
 			//std::cout << "after " << req_num << " requests, during time: " << during_time.count() << "sec" << std::endl;

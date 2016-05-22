@@ -352,10 +352,10 @@ namespace boost
 				print_path(graph, path);
 
 				//先在sstream往前2個byte, 因為上面path_print有換行
-				result_ss.seekp(-2, std::ios_base::end);
+				//result_ss.seekp(-2, std::ios_base::end);
 
 				//當 path 用 max_block 排序時用這個
-				result_ss << "(" << path_max_block << ")" << std::endl;
+				//result_ss << "(" << path_max_block << ")" << std::endl;
 
 				//當 path 用 d' 排序時用這個
 				//result_ss << "(" << calculate_path_d_prime(path, graph, bit_mask_map) << ")" << std::endl;
