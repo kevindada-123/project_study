@@ -24,7 +24,8 @@
 #define GB 7
 
 //全域變數 
-std::stringstream result_ss;
+//std::stringstream result_ss;
+std::ofstream result_ss("result.txt", std::ios_base::trunc);
 
 #include "add.hpp"
 #include "debug.hpp"
@@ -350,10 +351,10 @@ int main()
 		req_num++;
 	}
 
-	std::ofstream file_result("result.txt", std::ios_base::trunc);
+	/*std::ofstream file_result("result.txt", std::ios_base::trunc);
 	file_result.rdbuf()->pubsetbuf(NULL, 10240);
 	file_result << result_ss.rdbuf();
-	file_result.close();
+	file_result.close();*/
 
 
 	//測試/////////////////
