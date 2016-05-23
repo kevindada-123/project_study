@@ -32,6 +32,7 @@ std::ofstream result_ss("result.txt", std::ios_base::trunc);
 #include "expand.hpp"
 #include "reduce_algo.hpp"
 #include "delete_algo.hpp"
+#include "fr.hpp"
 
 using namespace boost;
 
@@ -187,34 +188,7 @@ void construct_graph(std::ifstream& file_in, Graph& g)
 
 
 }
-void randreq()
-{
-	std::fstream reqfile("request1.txt");
-	if (!reqfile)
-	{
-		std::cerr << "Not request1.txt file!!" << std::endl;
-		//return EXIT_FAILURE;
-	}
-	int i, s, d;
-	double C;
-	std::srand((unsigned)time(NULL)); // 以時間序列當亂數種子
-	for (i = 0; i < 10; ++i)
-	{
-		s = (std::rand() % 18);
-		while (s == 0 || s == 13 || s == 15 || s == 17 || s == 16)
-		{
-			s = (std::rand() % 18);
-		}
-		d = (std::rand() % 18);
-		while (d == 0 || d == 13 || d == 15 || d == 17 || d == 16 || d == s)
-		{
-			d = (std::rand() % 18);
-		}
-		C = (std::rand() % 1885) + 125;
-		C = C*0.1;
-		reqfile << s << " " << d << " " << C << "\n";
-	}
-}
+
 
 int main()
 {
@@ -274,6 +248,9 @@ int main()
 
 	//計時
 	auto timer_1 = std::chrono::high_resolution_clock::now();
+	//碎片率
+	long double fr_average_sum = 0;
+	std::stringstream fr_result_ss;
 
 	for (std::string line; std::getline(file_request, line);)
 	{
@@ -330,14 +307,31 @@ int main()
 
 
 		//統計數據
+		//計時部份
 		if (req_num % 10 == 0)
 		{
 			//計時
 			auto timer_2 = std::chrono::high_resolution_clock::now();
 			std::chrono::duration<double> during_time = timer_2 - timer_1;
-			//std::cout << "after " << req_num << " requests, during time: " << during_time.count() << "sec" << std::endl;
+			std::cout << "After " << req_num << " requests, during time: " << during_time.count() << "sec" << std::endl;
 			timer_1 = std::chrono::high_resolution_clock::now();
 		}
+		//計算碎片率部份
+		auto timer_fr_start = std::chrono::high_resolution_clock::now();
+		Graph::edge_iterator edge_iter, edge_iter_end;
+		tie(edge_iter, edge_iter_end) = edges(graph);
+		long double fr_sum = 0;
+		for (; edge_iter != edge_iter_end; ++edge_iter)
+			fr_sum += edge_fr(*edge_iter, IterMap(bit_mask_iter, edge_index_map));
+		fr_average_sum += fr_sum / num_edges(graph);
+		if (req_num % 10 == 0)
+		{
+			fr_result_ss << "After " << req_num << " requests, fr average is " << fr_average_sum / 10 << std::endl;
+			fr_average_sum = 0;
+		}
+		//扣除計算碎片率的時間
+		auto timer_fr_end = std::chrono::high_resolution_clock::now();
+		timer_1 += timer_fr_end - timer_fr_start;
 
 		/////輸出分配結果測試////
 		result_ss << std::endl << "result: ";
@@ -359,6 +353,9 @@ int main()
 	file_result << result_ss.rdbuf();
 	file_result.close();*/
 
+	std::ofstream file_fr_result("fr_result.txt", std::ios_base::trunc);
+	file_fr_result << fr_result_ss.rdbuf();
+	file_fr_result.close();
 
 	//測試/////////////////
 	//印出usingPaths

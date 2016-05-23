@@ -20,7 +20,7 @@ namespace boost
 {
 
 	//this function will return maximum size of available slot blocks in b
-	std::pair<int, int> max_block(std::vector<int> &b)
+	std::pair<int, int> max_block(const std::vector<int> &b)
 	{
 		int slot = 0;
 		int max = 0;
