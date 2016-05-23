@@ -54,7 +54,7 @@ namespace boost
 		}
 		else
 		{
-			fr = edge_maxfree_slot / edge_allfree_slot;
+			fr = double(edge_maxfree_slot) / double(edge_allfree_slot);
 		}
 		
 		return fr;
@@ -75,14 +75,14 @@ namespace boost
     }
 
     template<typename Edge, typename BitMaskMap>
-    long double edge_fr(const Edge& edge, const BitMaskMap& bit_mask_map)
+    double edge_fr(const Edge& edge, const BitMaskMap& bit_mask_map)
     {
         auto& edge_bit_mask = get(bit_mask_map, edge);
         
         int maxfree_slot = check_maxfree_slot(edge_bit_mask);
         int allfree_slot = check_allfree_slot(edge_bit_mask);
         
-		long double result = (double)maxfree_slot / (double)allfree_slot;
+		double result = (double)maxfree_slot / (double)allfree_slot;
         
 		return result;
     }
