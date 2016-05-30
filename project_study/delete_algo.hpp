@@ -27,10 +27,7 @@ namespace boost
 		auto vertex_pair = std::make_pair(request.src, request.dst);
 		auto result = usingPaths.find(vertex_pair);
 		if (result == usingPaths.end())
-		{
-			std::cout << "連線尚未建立，無法刪除，忽略!!\n";
 			return false;
-		}
 		else
 		{
 			for (auto& detail : result->second)

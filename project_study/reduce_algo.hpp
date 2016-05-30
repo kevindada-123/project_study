@@ -214,10 +214,7 @@ namespace boost
 		auto vertex_pair = std::make_pair(request.src, request.dst);
 		auto result = usingPaths.find(vertex_pair);
 		if (result == usingPaths.end())
-		{
-			std::cout << "縮減連線尚未建立，無法縮減，忽略!!\n";
 			return false;
-		}
 		/*得到 std::map<std::pair<src, dst>的 size*/
 		n = (int)(result->second.size());
 		priority_sort = new double*[n];
@@ -256,7 +253,7 @@ namespace boost
 		}
 		if (have_bandwidth < request.cap)
 		{
-			std::cout << "縮減頻寬大於連線頻寬，刪除連線!!\n";
+			//std::cout << "縮減頻寬大於連線頻寬，刪除連線!!\n";
 			return delete_algo(graph, usingPaths, request, bit_mask_map);
 			//return false;
 		}

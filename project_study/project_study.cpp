@@ -24,11 +24,11 @@
 #define GB 7
 
 //全域變數 
-//std::stringstream result_ss;
-std::ofstream result_ss("result.txt", std::ios_base::trunc);
+std::stringstream result_ss;
+//std::ofstream result_ss("result.txt", std::ios_base::trunc);
 
-#include "add.hpp"
 #include "debug.hpp"
+#include "add.hpp"
 #include "expand.hpp"
 #include "reduce_algo.hpp"
 #include "delete_algo.hpp"
@@ -240,18 +240,43 @@ int main()
 	using IterMap = iterator_property_map<IterType, EdgeIndexMap>;
 	IterType bit_mask_iter = edge_bit_mask.begin();
 
-
+	/////輸出分配結果測試////
 	int req_num = 1;
-
 	//設定ostringstream buffer大小為10K
 	result_ss.rdbuf()->pubsetbuf(NULL, 10240);
+	/////////////////////////
 
+	//------------------------收集實驗結果---------------------------//
+	int fail_times = 0;
+	int add_times=0,expand_times=0,reduce_times=0,delete_times=0;
+	//每10筆紀錄四種方法
+	int ten_add=0,ten_expand=0,ten_reduce=0,ten_delete=0;
+    //計算阻塞的次數
+	double block_times=0;
+	//計算阻塞率的部分
+	double block_rate=0;
+	int real_total =0;
+	int real_block_times=0;
+
+	//碎片率紀錄的檔案串流
+	std::stringstream fr_result_ss;
+	//統計4種方法的檔案串流
+	std::stringstream statistic_ss;
+	//阻塞率的檔案串流
+	std::stringstream block_rate_ss;
+	//使用連線總數的檔案串流
+	std::stringstream used_path_ss;
+	//計算cpu run time
+	std::stringstream run_time_ss;
 	//計時
 	auto timer_1 = std::chrono::high_resolution_clock::now();
-	//碎片率
-	long double fr_average_sum = 0;
-	std::stringstream fr_result_ss;
+	auto initial_time = std::chrono::high_resolution_clock::now();
+    //---------------------------------------------------------------//
 
+
+
+	std::cout << "正在產生結果中,請稍後" << std::endl;
+	
 	for (std::string line; std::getline(file_request, line);)
 	{
 		/////輸出分配結果測試////
@@ -289,74 +314,199 @@ int main()
 		result_ss << "request detail: " << "s=" << src_name << ", d=" << dst_name << ", C=" << request.cap;
 		result_ss << std::endl << std::endl;
 		////////////////////////
-
+        
 		//開始針對需求進行分配
 		bool success = false;
+		bool failed = false;
+
 		if (req_type == "add")
+		{
 			success = add(graph, request, IterMap(bit_mask_iter, edge_index_map));
+			
+			//----------收集實驗結果--------------//
+			add_times++;
+			ten_add++;
+			if(!success)
+				block_times++; 
+			//--------------------------------------//
+		}
 		else if (req_type == "delete")
+		{
 			success = delete_algo(graph, g_usingPaths, request, IterMap(bit_mask_iter, edge_index_map));
+			//----------收集實驗結果--------------//
+			if (!success)
+			{
+				fail_times++;	
+				failed = true;
+			}
+			else
+			{
+				delete_times++;
+			    ten_delete++;				
+			}
+			//----------------------------------//
+		}
 		else if (req_type == "expand")
 		{
 			success = expand(graph, request, IterMap(bit_mask_iter, edge_index_map));
 			if (!success)//擴充失敗時改用新增
+			{
 				success = add(graph, request, IterMap(bit_mask_iter, edge_index_map));
+			//----------收集實驗結果--------------//
+				add_times++;
+				ten_add++;
+				if(!success)
+					block_times++; 		
+			}
+
+
+			expand_times++;
+			ten_expand++;
+			//---------------------------------//
+			
 		}
 		else if (req_type == "reduce")
+		{
 			success = reduce_algo(graph, g_usingPaths, request, IterMap(bit_mask_iter, edge_index_map));
+			//----------收集實驗結果--------------//
+			if (!success)
+			{
+				fail_times++;
+				failed = true;
+			}
+			else
+			{
+				reduce_times++;
+			    ten_reduce++;				
+			}
+			//------------------------------------//
+		}
+		//------------------------------------收集實驗結果-----------------------------------------//
+		
+		auto timer_account_start = std::chrono::high_resolution_clock::now();
+		
 
+		//計算阻塞率的部分
+		++real_total;
+		real_total -= fail_times;
+		if (real_total % 10 == 0)
+		{			
+			real_block_times = block_times - fail_times;
+			if (real_block_times <= 0)
+				real_block_times = 0;
 
-		//統計數據
-		//計時部份
+			block_rate = (double)real_block_times / 10;
+			block_rate_ss << "After " << req_num << " requests, block_rate: " << block_rate << std::endl;
+
+			real_total = 0;
+			block_times = 0;
+			fail_times = 0;
+		}
+		
+
 		if (req_num % 10 == 0)
 		{
 			//計時
 			auto timer_2 = std::chrono::high_resolution_clock::now();
 			std::chrono::duration<double> during_time = timer_2 - timer_1;
-			std::cout << "After " << req_num << " requests, during time: " << during_time.count() << "sec" << std::endl;
+			run_time_ss << "After " << req_num << " requests, during time: " << during_time.count() << "sec" << std::endl;
 			timer_1 = std::chrono::high_resolution_clock::now();
+		
+			//計算add/expand/reduce/delete部分
+			//累計的部分
+			statistic_ss << "After " << req_num << " requests, add times: " << add_times << std::endl;
+			statistic_ss << "After " << req_num << " requests, expand times: " << expand_times << std::endl;
+			statistic_ss << "After " << req_num << " requests, reduce times: " << reduce_times << std::endl;
+			statistic_ss << "After " << req_num << " requests, delete times: " << delete_times << std::endl;
+			//每10筆的部分
+			statistic_ss << "In " << req_num - 10 << "~" << req_num << " times add number: " << ten_add << std::endl;
+			statistic_ss << "In " << req_num - 10 << "~" << req_num << " times expand number: " << ten_expand << std::endl;
+			statistic_ss << "In " << req_num - 10 << "~" << req_num << " times reduce number: " << ten_reduce << std::endl;
+			statistic_ss << "In " << req_num - 10 << "~" << req_num << " times delete number: " << ten_delete << std::endl;
+			ten_add = 0; ten_expand = 0; ten_reduce = 0; ten_delete = 0;
+
+
+			//計算正在使用的連線總數
+			int used_link_num = 0;
+			for (const auto& usingPath : g_usingPaths)
+				used_link_num += usingPath.second.size();
+			used_path_ss << "After " << req_num << " requests,Using path number is : " << used_link_num << std::endl;
+
+
+			//計算碎片率部份
+			Graph::edge_iterator edge_iter, edge_iter_end;
+			tie(edge_iter, edge_iter_end) = edges(graph);
+			double fr_sum = 0;
+			for (; edge_iter != edge_iter_end; ++edge_iter)
+				fr_sum += edge_fr(*edge_iter, IterMap(bit_mask_iter, edge_index_map));			
+			fr_result_ss << "After " << req_num << " requests, fr average is " << fr_sum / num_edges(graph) << std::endl;
+			
 		}
-		//計算碎片率部份
-		auto timer_fr_start = std::chrono::high_resolution_clock::now();
-		Graph::edge_iterator edge_iter, edge_iter_end;
-		tie(edge_iter, edge_iter_end) = edges(graph);
-		long double fr_sum = 0;
-		for (; edge_iter != edge_iter_end; ++edge_iter)
-			fr_sum += edge_fr(*edge_iter, IterMap(bit_mask_iter, edge_index_map));
-		fr_average_sum += fr_sum / num_edges(graph);
-		if (req_num % 10 == 0)
-		{
-			fr_result_ss << "After " << req_num << " requests, fr average is " << fr_average_sum / 10 << std::endl;
-			fr_average_sum = 0;
-		}
-		//扣除計算碎片率的時間
-		auto timer_fr_end = std::chrono::high_resolution_clock::now();
-		timer_1 += timer_fr_end - timer_fr_start;
+				
 
 		/////輸出分配結果測試////
 		result_ss << std::endl << "result: ";
 		if (success)
 			result_ss << "success!" << std::endl;
-		else
+		else if (!success && !failed)
 			result_ss << "block!" << std::endl;
+		else if (!success && failed)
+			result_ss << "undefined! do nothing!" << std::endl;
 		result_ss << std::endl << "------------------------------------" << std::endl;
 		////////////////////////
 
 		//debug//測試//////////
 		//bit_mask_print_separate(graph, edge_bit_mask, IterMap(bit_mask_iter, edge_index_map));
+		++req_num;
+		
 
-		req_num++;
+		//扣除收集實驗結果和輸出分配的時間
+		auto timer_account_end = std::chrono::high_resolution_clock::now();
+		timer_1 += timer_account_end - timer_account_start;
+		initial_time += timer_account_end - timer_account_start;
+		//---------------------------------------------------------------------//
+		
 	}
 
-	/*std::ofstream file_result("result.txt", std::ios_base::trunc);
+
+
+
+	auto final_time = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<double> working_time = final_time - initial_time;
+	run_time_ss << "total used times:" << working_time.count() << "sec" << std::endl;
+	
+	//cpu run time 檔案輸出
+	std::ofstream file_run_time("result_data/runtime.txt", std::ios_base::trunc);
+	file_run_time << run_time_ss.rdbuf();
+	file_run_time.close();
+	
+	/////輸出分配結果測試////
+	std::ofstream file_result("result.txt", std::ios_base::trunc);
 	file_result.rdbuf()->pubsetbuf(NULL, 10240);
 	file_result << result_ss.rdbuf();
-	file_result.close();*/
+	file_result.close();
+	//////////////////////////
 
-	std::ofstream file_fr_result("fr_result.txt", std::ios_base::trunc);
+    //碎片率檔案輸出
+	std::ofstream file_fr_result("result_data/fr_result.txt", std::ios_base::trunc);
 	file_fr_result << fr_result_ss.rdbuf();
 	file_fr_result.close();
 
+	//統計數據檔案輸出
+	std::ofstream file_static("result_data/static.txt", std::ios_base::trunc);
+	file_static << statistic_ss.rdbuf();
+	file_static.close();
+	
+	//阻塞率檔案輸出 block_rate_ss
+	std::ofstream file_block_rate("result_data/blockrate.txt", std::ios_base::trunc);
+	file_block_rate << block_rate_ss.rdbuf();
+	file_block_rate.close();
+	
+	//使用的連線數量的檔案串流 used_path_ss
+	std::ofstream file_used_path("result_data/UsingPathNumber.txt", std::ios_base::trunc);
+	file_used_path << used_path_ss.rdbuf();
+	file_used_path.close();
+	
 	//測試/////////////////
 	//印出usingPaths
 	/*print_usingPaths(graph, g_usingPaths);*/

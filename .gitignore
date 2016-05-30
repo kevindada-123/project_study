@@ -291,3 +291,8 @@ project_study.VC.db
 project_study/result.txt
 project_study/bit_mask_separate/*
 project_study/fr_result.txt
+project_study/result_data/blockrate.txt
+project_study/result_data/fr_result.txt
+project_study/result_data/UsingPathNumber.txt
+project_study/result_data/static.txt
+project_study/result_data/runtime.txt
