@@ -203,13 +203,13 @@ namespace boost
 		switch(g_expand_priority)
 		{
 			case Priority::d_prime: 
-					resort_by_d_prime(usedPaths_vector, graph, bit_mask_map);
+				resort_by_d_prime(usedPaths_vector, graph, bit_mask_map);
 				break;
 			case Priority::max_block: 
-					resort_by_max_block(usedPaths_vector, bit_mask_map);
+				resort_by_max_block(usedPaths_vector, bit_mask_map);
 				break;
 			case Priority::fr: 
-					resort_by_fr(usedPaths_vector, bit_mask_map);
+				resort_by_fr(usedPaths_vector, bit_mask_map);
 				break;
 		}
 

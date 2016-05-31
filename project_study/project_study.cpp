@@ -23,14 +23,19 @@
 #define Cslot 12.5
 #define GB 7
 
+//全域變數 
 //決定使用何種權重
 enum Priority {d_prime, max_block, fr};
-Priority g_expand_priority = d_prime;
+Priority g_expand_priority = Priority::max_block;
 
 enum R_Priority { pathweight_slot, fragmentation_rate, slot_big_first, slot_small_first };
-R_Priority g_reduce_priority = slot_big_first;
+R_Priority g_reduce_priority = R_Priority::pathweight_slot;
 
-//全域變數 
+enum CUT_Priority { cut_from_left, cut_from_right };
+CUT_Priority g_reduce_cut_priority = CUT_Priority::cut_from_right;
+
+
+//輸出結果的stringstream
 std::stringstream result_ss;
 //std::ofstream result_ss("result.txt", std::ios_base::trunc);
 
@@ -282,7 +287,7 @@ int main()
 
 
 
-	std::cout << "正在產生結果中,請稍後" << std::endl;
+	std::cout << "running..." << std::endl;
 	
 	for (std::string line; std::getline(file_request, line);)
 	{

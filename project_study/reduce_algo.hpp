@@ -160,9 +160,25 @@ namespace boost
 			{
 				std::vector<int>& b = get(bit_mask_map, edge);//得到bitmask 
 				cut_left(b, start, num, slot);
+				switch (g_reduce_cut_priority)
+				{
+				case CUT_Priority::cut_from_left:
+					cut_left(b, start, num, slot);
+					break;
+				case CUT_Priority::cut_from_right:
+					cut_right(b, start, num, slot);
+					break;
+				}
 			}
 			//cut_left要加
-			start = start + (slot);
+			switch (g_reduce_cut_priority)
+			{
+			case CUT_Priority::cut_from_left:
+				start = start + (slot);
+				break;
+			case CUT_Priority::cut_from_right:
+				break;
+			}
 			/////////////////////////////////////
 			auto path = (*vertex).edge_list;
 			request.cap = 0;
@@ -176,11 +192,26 @@ namespace boost
 			//std::cout << "dowhat==3 刪到剩G\n";
 			for (const auto& edge : (*vertex).edge_list)
 			{
-				std::vector<int>& b = get(bit_mask_map, edge);//得到bitmask 
-				cut_left(b, start, num, num - G - 1);
+				std::vector<int>& b = get(bit_mask_map, edge);//得到bitmask
+				switch (g_reduce_cut_priority)
+				{
+				case CUT_Priority::cut_from_left:
+					cut_left(b, start, num, num - G - 1);
+					break;
+				case CUT_Priority::cut_from_right:
+					cut_right(b, start, num, num - G - 1);
+					break;
+				}
 			}
 			//cut_left要加
-			start = start + (num - G - 1);
+			switch (g_reduce_cut_priority)
+			{
+			case CUT_Priority::cut_from_left:
+				start = start + (slot);
+				break;
+			case CUT_Priority::cut_from_right:
+				break;
+			}
 			/////////////////////////////////////
 			request.cap = request.cap - ((num - 1 - G)* mode*Cslot);
 			auto path = (*vertex).edge_list;
@@ -233,18 +264,18 @@ namespace boost
 			double slot_bandwidth = (((*vertex).slot_num - 1)*mode*Cslot);
 			switch (g_reduce_priority)
 			{
-			case R_Priority::pathweight_slot:
-				priority = pathweight_slot(graph, vertex, bit_mask_map, leftbig); //路徑長度*(路徑配置的邊 !=0的slot數加起來)
-				break;
-			case R_Priority::fragmentation_rate:
-				priority = fragmentation_rate(vertex, bit_mask_map, leftbig);     //破碎率 FR越小表示越破碎!!!!!
-				break;
-			case R_Priority::slot_big_first:
-				priority = slot_bandwidth; leftbig = 1;                         //路徑頻寬由大到小排
-				break;
-			case R_Priority::slot_small_first:
-				priority = slot_bandwidth; leftbig = 0;                         //路徑頻寬由小到大排
-				break;
+				case R_Priority::pathweight_slot:
+					priority = pathweight_slot(graph, vertex, bit_mask_map, leftbig); //路徑長度*(路徑配置的邊 !=0的slot數加起來)
+					break;
+				case R_Priority::fragmentation_rate:
+					priority = fragmentation_rate(vertex, bit_mask_map, leftbig);     //破碎率 FR越小表示越破碎!!!!!
+					break;
+				case R_Priority::slot_big_first:
+					priority = slot_bandwidth; leftbig = 1;                         //路徑頻寬由大到小排
+					break;
+				case R_Priority::slot_small_first:
+					priority = slot_bandwidth; leftbig = 0;                         //路徑頻寬由小到大排
+					break;
 			}
 			//priority = slot_bandwidth; leftbig = 1;//取得路徑的優先權資料
 			//pathweight_slot(graph,vertex, bit_mask_map,leftbig); //路徑長度*(路徑配置的邊 !=0的slot數加起來)
