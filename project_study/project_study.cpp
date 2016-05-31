@@ -336,7 +336,7 @@ int main()
 			//----------收集實驗結果--------------//
 			if (!success)
 			{
-				fail_times++;	
+				--real_total;	
 				failed = true;
 			}
 			else
@@ -371,7 +371,7 @@ int main()
 			//----------收集實驗結果--------------//
 			if (!success)
 			{
-				fail_times++;
+				--real_total;
 				failed = true;
 			}
 			else
@@ -387,20 +387,15 @@ int main()
 		
 
 		//計算阻塞率的部分
-		++real_total;
-		real_total -= fail_times;
+		++real_total;		
 		if (real_total % 10 == 0)
-		{			
-			real_block_times = block_times - fail_times;
-			if (real_block_times <= 0)
-				real_block_times = 0;
+		{						
+			if (block_times <= 0)
+				block_times = 0;
 
-			block_rate = (double)real_block_times / 10;
+			block_rate = (double)block_times / real_total;
 			block_rate_ss << "After " << req_num << " requests, block_rate: " << block_rate << std::endl;
 
-			real_total = 0;
-			block_times = 0;
-			fail_times = 0;
 		}
 		
 
