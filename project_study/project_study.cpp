@@ -23,6 +23,13 @@
 #define Cslot 12.5
 #define GB 7
 
+//決定使用何種權重
+enum Priority {d_prime, max_block, fr};
+Priority g_expand_priority = d_prime;
+
+enum R_Priority { pathweight_slot, fragmentation_rate, slot_big_first, slot_small_first };
+R_Priority g_reduce_priority = slot_big_first;
+
 //全域變數 
 std::stringstream result_ss;
 //std::ofstream result_ss("result.txt", std::ios_base::trunc);
@@ -476,7 +483,7 @@ int main()
 	file_run_time.close();
 	
 	/////輸出分配結果測試////
-	std::ofstream file_result("result.txt", std::ios_base::trunc);
+	std::ofstream file_result("result_data/result.txt", std::ios_base::trunc);
 	file_result.rdbuf()->pubsetbuf(NULL, 10240);
 	file_result << result_ss.rdbuf();
 	file_result.close();

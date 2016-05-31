@@ -1,4 +1,4 @@
-#ifndef FR_H
+﻿#ifndef FR_H
 #define FR_H
 
 #include <numeric> //accumulate
@@ -59,7 +59,7 @@ namespace boost
 		
 		return fr;
 	}
-	//對using_path_detail_vector以max_block大�??��??��?
+	//對using_path_detail_vector以fr大小進行排序, 由大到小
     template<typename UsingPathDetailVector, typename BitMaskMap>
     void resort_by_fr(UsingPathDetailVector& using_path_detail_vector,const BitMaskMap& bit_mask_map)
     {

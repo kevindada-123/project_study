@@ -15,6 +15,7 @@
 
 #include "yen_ksp.hpp"
 #include "add.hpp"
+#include "fr.hpp"
 
 namespace boost
 {
@@ -109,6 +110,7 @@ namespace boost
 		std::sort(using_path_detail_vector.begin(), using_path_detail_vector.end(), cmp);
 	}
 
+
 	template <typename UsingPathDetailSet, typename UsingPathDetailVectorIterator>
 	typename UsingPathDetailSet::iterator find_iterator_in_set
 	(const UsingPathDetailSet& _multiset, const UsingPathDetailVectorIterator& _vector_iterator)
@@ -197,13 +199,21 @@ namespace boost
 		//因為無法直接對multiset進行排序, 所以將multiset內容copy到vector, 再進行排序
 		std::vector<UsingPathDetail> usedPaths_vector{ usedPaths.begin(), usedPaths.end() };
 
+		//根據 g_sort_priority 決定使用何種排序方式
+		switch(g_expand_priority)
+		{
+			case Priority::d_prime: 
+					resort_by_d_prime(usedPaths_vector, graph, bit_mask_map);
+				break;
+			case Priority::max_block: 
+					resort_by_max_block(usedPaths_vector, bit_mask_map);
+				break;
+			case Priority::fr: 
+					resort_by_fr(usedPaths_vector, bit_mask_map);
+				break;
+		}
 
-		////UsingPathDetail的vector以max_block大小進行排序//////////////////////////////////////////
-		resort_by_max_block(usedPaths_vector, bit_mask_map);
-
-		//UsingPathDetail的vector以d_prime大小進行排序//////////////////////////////////////////////
-		//resort_by_d_prime(usedPaths_vector, graph, bit_mask_map);
-
+		
 
 
 		//根據在vector每條path去檢查和分配, 會將更改的usingPathDetail內容寫到multiset(就是usedPaths)

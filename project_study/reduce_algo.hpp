@@ -18,12 +18,6 @@
 #include "delete_algo.hpp"
 
 
-
-#define G1 1
-#define M_MAX 4
-#define B 300
-#define Cslot 12.5
-#define GB 7
 #define MAX 1e9 
 #define MIN 0
 
@@ -43,7 +37,7 @@ namespace boost
 		if (leftbig == 0)//左->右,小->大
 		{
 			for (int i = n - 1; i >= 0; i--) {
-				for (int j = 0; j < n - i-1; j++) {
+				for (int j = 0; j < n - i - 1; j++) {
 					if (data[j + 1][1] < data[j][1]) {
 						swap(data, j + 1, j);
 					}
@@ -125,7 +119,7 @@ namespace boost
 	//對路徑經過的邊做縮減
 	//1,全刪 2,刪cap 3,刪到剩G 4,擴充
 	template<typename Request, typename BitMaskMap, typename UsingPath_Detail, typename UsingPath>
-	int reduce(UsingPath &result, UsingPath_Detail& vertex, BitMaskMap& bit_mask_map, Request& request, int mode, int n, int dowhat,bool &deletepath)
+	int reduce(UsingPath &result, UsingPath_Detail& vertex, BitMaskMap& bit_mask_map, Request& request, int mode, int n, int dowhat, bool &deletepath)
 	{
 		double cap = request.cap;//需縮減頻寬
 		int slot, can_ex = 1;
@@ -237,8 +231,22 @@ namespace boost
 			}
 			mode = mlvl(path_weight);
 			double slot_bandwidth = (((*vertex).slot_num - 1)*mode*Cslot);
-
-			priority = slot_bandwidth; leftbig = 1;//取得路徑的優先權資料
+			switch (g_reduce_priority)
+			{
+			case R_Priority::pathweight_slot:
+				priority = pathweight_slot(graph, vertex, bit_mask_map, leftbig); //路徑長度*(路徑配置的邊 !=0的slot數加起來)
+				break;
+			case R_Priority::fragmentation_rate:
+				priority = fragmentation_rate(vertex, bit_mask_map, leftbig);     //破碎率 FR越小表示越破碎!!!!!
+				break;
+			case R_Priority::slot_big_first:
+				priority = slot_bandwidth; leftbig = 1;                         //路徑頻寬由大到小排
+				break;
+			case R_Priority::slot_small_first:
+				priority = slot_bandwidth; leftbig = 0;                         //路徑頻寬由小到大排
+				break;
+			}
+			//priority = slot_bandwidth; leftbig = 1;//取得路徑的優先權資料
 			//pathweight_slot(graph,vertex, bit_mask_map,leftbig); //路徑長度*(路徑配置的邊 !=0的slot數加起來)
 			//fragmentation_rate(vertex,bit_mask_map,leftbig);     //破碎率 FR越小表示越破碎!!!!!
 			//slot_bandwidth; leftbig = 1;                         //路徑頻寬由大到小排
@@ -259,7 +267,7 @@ namespace boost
 		}
 		bubbleSort(priority_sort, n, leftbig);//依優先權資料排序
 
-		double cap = request.cap,stay_cap;
+		double cap = request.cap, stay_cap;
 		double wid;
 		for (i = 0; i < n; i++)
 		{
@@ -287,7 +295,7 @@ namespace boost
 			wid = ((*vertex_num).slot_num - 1)* mode*Cslot;
 			int capmore = 0;
 			double mid = mode*Cslot;
-			if(((int)(cap* 10) % (int)(mid * 10))>0)capmore = 1;
+			if (((int)(cap * 10) % (int)(mid * 10))>0)capmore = 1;
 			stay_cap = ((int)(cap / mid) + capmore)*mid;
 			if ((wid - stay_cap) >= (mode*Cslot*G))//這條路徑的頻寬-需求在這個mode下所需頻寬>=保障頻寬
 			{
@@ -304,7 +312,7 @@ namespace boost
 				break;
 			}
 			else if ((wid - stay_cap) < (mode*Cslot*G) && (wid - stay_cap) > 0 && G > 1)
-			//比g小// 0<這條路徑的頻寬-需求在這個mode下所需頻寬<保障頻寬 且 保障頻寬>1
+				//比g小// 0<這條路徑的頻寬-需求在這個mode下所需頻寬<保障頻寬 且 保障頻寬>1
 				//保留 保障頻寬 往下查找有無還可以刪的
 			{
 				do_num[i][1] = 3;//保留 保障頻寬
@@ -386,7 +394,7 @@ namespace boost
 				{
 					if (do_num[j][0]>path_num)
 					{
-						do_num[j][0]= do_num[j][0] - 1;
+						do_num[j][0] = do_num[j][0] - 1;
 					}
 				}
 			}
