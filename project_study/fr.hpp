@@ -78,11 +78,15 @@ namespace boost
     double edge_fr(const Edge& edge, const BitMaskMap& bit_mask_map)
     {
         auto& edge_bit_mask = get(bit_mask_map, edge);
-        
+		double result;
+
         int maxfree_slot = check_maxfree_slot(edge_bit_mask);
         int allfree_slot = check_allfree_slot(edge_bit_mask);
         
-		double result = (double)maxfree_slot / (double)allfree_slot;
+		if (maxfree_slot == 0 && allfree_slot == 0)
+			result = 0;
+		else
+			result = (double)maxfree_slot / (double)allfree_slot;
         
 		return result;
     }

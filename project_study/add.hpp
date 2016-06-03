@@ -27,7 +27,7 @@ namespace boost
 
 		//回傳結果 (position, maxsize)
 		//std::pair<int, int> 
-		int result_first, result_second;
+		int result_first = -1, result_second = 0;
 
 		for (int i = 0; i < b.size(); ++i)
 		{
