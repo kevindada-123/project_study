@@ -160,14 +160,19 @@ namespace boost
 			{
 				Ni = (int)(request.cap / (Mi*Cslot)) + 1;
 			}
+
+			if (Ni < G + 1)
+				Ni = G + 1;
+
 			req_state = true;//完成連線
 		}
 		else if (((Maxblockai - 1)*Mi*Cslot) < request.cap)//未完成連線,還需要路徑
 		{
-			request.cap = request.cap - ((Maxblockai - 1)*Mi*Cslot);
+			request.cap -= (Maxblockai - 1)*Mi*Cslot;
 			Ni = Maxblockai;
 			req_state = false;//未完成連線
 		}
+
 
 		//回傳連線狀態 & 分配的slot數
 		return std::make_pair(req_state, Ni);
@@ -274,7 +279,7 @@ namespace boost
 			}
 			int mi = mlvl(d_weight_sum);
 			
-			if (max_block_a.second >= G) //這條路徑可以用
+			if (max_block_a.second > G) //這條路徑可以用
 			{
 				int ni;
 				tie(req_state, ni) = countNi(max_block_a.second, mi, request); //大小,調變,要求
@@ -289,7 +294,7 @@ namespace boost
 						bit_mask[pos] = 1;
 					}
 					//在尾部加上GB
-					bit_mask[pos] = 7;
+					bit_mask[pos] = B;
 
 					//紀錄分配到哪條 edge(link), solt 的起始位置, solt的數量
 					alloc_record record{ edge, block_start , ni };
