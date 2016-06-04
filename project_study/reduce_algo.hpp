@@ -159,7 +159,6 @@ namespace boost
 			for (const auto& edge : (*vertex).edge_list)
 			{
 				std::vector<int>& b = get(bit_mask_map, edge);//得到bitmask 
-				cut_left(b, start, num, slot);
 				switch (g_reduce_cut_priority)
 				{
 				case CUT_Priority::cut_from_left:
