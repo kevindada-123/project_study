@@ -268,7 +268,7 @@ int main()
 	//計算阻塞率的部分
 	double block_rate=0;
 	int real_total =0;
-	int real_block_times=0;
+	int real_total_old =0;
 
 	//碎片率紀錄的檔案串流
 	std::stringstream fr_result_ss;
@@ -399,24 +399,24 @@ int main()
 		
 
 		//計算阻塞率的部分
-		++real_total;		
-		if (real_total % 10 == 0)
+		++real_total;
+		if (real_total % 10 == 0 && real_total != real_total_old)
 		{						
 			if (block_times <= 0)
 				block_times = 0;
 
 			block_rate = (double)block_times / real_total;
-			block_rate_ss << "After " << req_num << " requests, block_rate: " << block_rate << std::endl;
+			block_rate_ss << block_rate << std::endl;
 
 		}
-		
+		real_total_old = real_total;
 
 		if (req_num % 10 == 0)
 		{
 			//計時
 			auto timer_2 = std::chrono::high_resolution_clock::now();
 			std::chrono::duration<double> during_time = timer_2 - timer_1;
-			run_time_ss << "After " << req_num << " requests, during time: " << during_time.count() << "sec" << std::endl;
+			run_time_ss << during_time.count() << std::endl;
 			timer_1 = std::chrono::high_resolution_clock::now();
 		
 			//計算add/expand/reduce/delete部分
@@ -437,7 +437,7 @@ int main()
 			int used_link_num = 0;
 			for (const auto& usingPath : g_usingPaths)
 				used_link_num += usingPath.second.size();
-			used_path_ss << "After " << req_num << " requests,Using path number is : " << used_link_num << std::endl;
+			used_path_ss << used_link_num << std::endl;
 
 
 			//計算碎片率部份
@@ -446,10 +446,10 @@ int main()
 			double fr_sum = 0;
 			for (; edge_iter != edge_iter_end; ++edge_iter)
 				fr_sum += edge_fr(*edge_iter, IterMap(bit_mask_iter, edge_index_map));			
-			fr_result_ss << "After " << req_num << " requests, fr average is " << fr_sum / num_edges(graph) << std::endl;
+			fr_result_ss << fr_sum / num_edges(graph) << std::endl;
 			
 		}
-				
+		
 
 		/////輸出分配結果測試////
 		result_ss << std::endl << "result: ";
@@ -480,7 +480,7 @@ int main()
 
 	auto final_time = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double> working_time = final_time - initial_time;
-	run_time_ss << "total used times:" << working_time.count() << "sec" << std::endl;
+	run_time_ss << working_time.count() << std::endl;
 	
 	//cpu run time 檔案輸出
 	std::ofstream file_run_time("result_data/runtime.txt", std::ios_base::trunc);
