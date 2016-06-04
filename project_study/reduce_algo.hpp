@@ -217,7 +217,7 @@ namespace boost
 			vertex = (result->second).erase(vertex);
 			UsingPathDetail update_upd{ path ,start,G + 1 };
 			vertex = (result->second).insert(update_upd);
-			if (request.cap == 0)
+			if (request.cap <= 0)
 				return 1;
 			else
 				return 0;
