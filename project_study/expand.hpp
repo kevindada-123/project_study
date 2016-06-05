@@ -19,7 +19,44 @@
 
 namespace boost
 {
+	//一條路徑最多可配置的slot數 Ni 公式(3)
+	template<typename T, typename Request>
+	std::pair<bool, int> countNi_expand_ver(T Maxblockai, T Mi, Request& request)//路徑i的ai mask的Maxblock,路徑i的調變等級M
+	{
+		int Ni;
+		bool req_state = false;
 
+		if (((Maxblockai - 1)*Mi*Cslot) >= request.cap)//最後一條路徑,完成連線
+		{
+			if ((int)(request.cap * 10) % (int)(Mi*Cslot * 10) > 0)
+			{
+				Ni = (int)(request.cap / (Mi*Cslot)) + 1 + 1;
+			}
+			else if ((int)(request.cap * 10) % (int)(Mi*Cslot * 10) == 0)
+			{
+				Ni = (int)(request.cap / (Mi*Cslot)) + 1;
+			}
+
+
+			req_state = true;//完成連線
+		}
+		else if (((Maxblockai - 1)*Mi*Cslot) < request.cap)//未完成連線,還需要路徑
+		{
+			request.cap -= (Maxblockai - 1)*Mi*Cslot;
+			Ni = Maxblockai;
+			req_state = false;//未完成連線
+		}
+
+
+		//回傳連線狀態 & 分配的slot數
+		return std::make_pair(req_state, Ni);
+
+
+	}
+	
+	
+	
+	
 	//計算mi
 	template<typename Graph, typename Request, typename Path>
 	int calculate_mi(const Graph& graph, const Request& request, const Path& path)
@@ -273,7 +310,7 @@ namespace boost
 			if (max_left_range != 0)
 			{
 				//先以左邊去擴充
-				tie(req_state, ni) = countNi(max_left_range, mi, request);
+				tie(req_state, ni) = countNi_expand_ver(max_left_range, mi, request);
 
 				/////輸出分配結果測試////
 				int path_max_block = calculate_path_max_block(path, bit_mask_map);
@@ -307,10 +344,10 @@ namespace boost
 				print_path(graph, path);
 
 				//先在sstream往前2個byte, 因為上面path_print有換行
-				result_ss.seekp(-2, std::ios_base::end);
+				//result_ss.seekp(-2, std::ios_base::end);
 
 				//當 path 用 max_block 排序時用這個
-				result_ss << "(" << calculate_path_max_block(path, bit_mask_map) << ")" << std::endl;
+				//result_ss << "(" << calculate_path_max_block(path, bit_mask_map) << ")" << std::endl;
 
 				//當 path 用 d' 排序時用這個
 				//result_ss << "(" << calculate_path_d_prime(path, graph, bit_mask_map) << ")" << std::endl;
@@ -324,7 +361,7 @@ namespace boost
 			//假如左邊無法滿足需求, 開始對右邊擴充, 先算出在右邊要擴充的數量
 			else if (max_right_range != 0)
 			{
-				tie(req_state, ni) = countNi(max_right_range, mi, request);
+				tie(req_state, ni) = countNi_expand_ver(max_right_range, mi, request);
 				
 				/////輸出分配結果測試////
 				int path_max_block = calculate_path_max_block(path, bit_mask_map);
