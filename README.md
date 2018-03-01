@@ -6,8 +6,7 @@ independent study project
 使用 Boost Graph Library (BGL)  
 <br>
 Input  Graph  
-![Alt text](https://raw.githubusercontent.com/a59566/project_study/master/graph_1.PNG "Graph")
-
+<img alt="Graph" src=https://raw.githubusercontent.com/a59566/project_study/master/graph_1.PNG />
 <br>
 從 graph_input.txt 輸入圖  
 格式: 
